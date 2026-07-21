@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "{{ANKITOV_REPO}}": {
+      "path": "{{ANKITOV_REPO}}",
+      "last_accessed": "2026-07-21T08:03:44.782185Z",
+      "last_instruction": "AnkiTov launch system initialization",
+      "last_session_id": null
+    }
+  }
+}

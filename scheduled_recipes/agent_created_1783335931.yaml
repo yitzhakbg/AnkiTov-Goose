@@ -1,0 +1,59 @@
+version: "1.0.0"
+title: "Rust Agent Memory Landscape Review"
+description: >
+  Scheduled quarterly review of Rust-native agent memory/knowledge graph
+  projects. Evaluates whether MenteDB, YantrikDB, or others have matured
+  enough to warrant replacing/adjuncting our LanceDB + jj + SQLite stack.
+
+instructions: |
+  Review the Rust agent memory ecosystem. This is a read-only research task.
+  Do NOT make any changes to the codebase.
+
+  1. Check MenteDB (github.com/nambok/mentedb):
+     - Star count and growth trajectory
+     - Recent releases and changelog
+     - Open issues / PR velocity
+     - Published crate on crates.io
+     - Any adoption signals (mentioned in other projects, blog posts)
+
+  2. Check YantrikDB (github.com/yantrikos/yantrikdb):
+     - Same metrics as above
+     - Note: AGPL-3.0 license may still be a blocker
+
+  3. Check Cuba Memorys (github.com/LeandroPG19/cuba-memorys):
+     - Same metrics (especially MCP-native architecture adoption)
+
+  4. Check rUvOS (github.com/dgdev25/ruvos_old):
+     - Any updates or name changes
+
+  5. Compare against our current stack:
+     - LanceDB (10.8K stars, Rust-native vector DB)
+     - Our .agents/threads/ SQLite persistence
+     - Any of the upstarts crossed a maturity threshold?
+       (Criteria: >1K stars, >6mo active development, published crate,
+        documented API, non-viral license)
+
+  6. Write findings to `specs/research/YYYY-MM-DD-rust-agent-memory-landscape.md`
+     with: updated star counts, trend analysis (growing/stagnant/declining),
+     maturity assessment, and a clear GO/NO-GO recommendation.
+
+parameters:
+  - key: context
+    input_type: string
+    requirement: optional
+    description: "Quarterly ecosystem check"
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+  - type: builtin
+    name: analyze
+    timeout: 300
+    bundled: true
+
+prompt: |
+  Quarterly Rust agent memory landscape review.
+  Check MenteDB, YantrikDB, Cuba Memorys, rUvOS against our LanceDB+jj+SQLite stack.
+  Write findings to specs/research/. GO/NO-GO recommendation required.

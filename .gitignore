@@ -1,0 +1,19 @@
+# AnkiTov Goose Repository
+
+# Session data — machine-specific, transient, too large
+sessions.db
+sessions.db-shm
+sessions.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Don't commit the repo's own bootstrap config
+.env
+*.bak.*

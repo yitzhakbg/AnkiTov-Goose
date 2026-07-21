@@ -1,0 +1,62 @@
+version: "1.0.0"
+title: "Classroom Tools Request Queue Review"
+description: >
+  Quarterly review of teacher-submitted Classroom Tool requests from the
+  tool_requests table. Prioritizes by demand frequency, researches matching
+  Anki addons, assesses safety/compatibility, and adds approved tools to
+  the Gold Set registry with full i18n entries.
+
+instructions: |
+  Review the tool_requests queue and triage teacher requests for potential
+  addition to the Classroom Tools Gold Set registry.
+
+  ## Context
+  The AnkiTov Classroom Tools system lets teachers request new tools in
+  natural language. These requests are logged to the `tool_requests` table
+  (in backend/data/ankitov.db — libSQL). This scheduled review processes
+  the queue and turns the most-demanded tools into real features.
+
+  ## Steps
+
+  1. **Fetch and normalize the queue**
+     - Query `tool_requests` table, group by normalized query text
+     - Count occurrences per request, sort by count descending
+     - Focus on requests with count >= 2 (demanded by multiple teachers)
+     - Single requests reviewed if they represent accessibility needs
+
+  2. **Research matching Anki addons**
+     - For each prioritized request, search https://ankiweb.net/shared/addons/2.1
+     - Evaluate: last updated within 12 months? (abandoned = reject)
+     - Evaluate: no telemetry/spyware concerns?
+     - Evaluate: compatible with Anki 2.1.50+?
+     - Evaluate: no known conflicts with Session Driver or DRM addon?
+
+  3. **Add approved tools to Gold Set**
+     - Add entry to `backend/registry/tools.toml` with:
+       - ankiweb_id, version_hash (SHA-256 of .ankiaddonp)
+       - display_name_key, description_key, what_it_does_key (i18n keys)
+       - category, risk level, conflicts list, default_config
+     - Add i18n strings to all locale files:
+       - `backend/i18n/en-US/main.ftl`
+       - `backend/i18n/ar/main.ftl`
+       - `backend/i18n/he/main.ftl`
+       - Plus any additional locale directories found
+
+  4. **Report results**
+     - Write summary to `specs/research/tool-request-review-YYYY-MM-DD.md`
+     - Format: requests reviewed, tools added, tools rejected (with reasons)
+     - Commit via jj: `jj commit -m "tools: quarterly request queue review"`
+
+  5. **Notify teachers** (if notification system is available)
+     - For each approved tool, notify teachers who requested it
+     - Message: "The feature you requested is now available: {tool_name}. [Enable]"
+
+  ## Constraints
+  - This is a read-write task. You may modify tools.toml and locale files.
+  - Run `cargo check` after any tools.toml or .ftl changes.
+  - Do NOT install addons on live profiles — only update the registry.
+  - Version hashes are safety-critical: verify the .ankiaddonp file hash yourself.
+
+provider: openrouter
+model: deepseek/deepseek-chat
+max_turns: 30

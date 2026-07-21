@@ -1,0 +1,47 @@
+version: "1.0.0"
+title: "TopCoat Framework — Three-Month Review"
+description: >
+  Review TopCoat (https://github.com/tokio-rs/topcoat), a batteries-included
+  web application framework for Rust built on tokio. Assess its maturity,
+  architecture, and potential fit for AnkiTov's stack.
+
+instructions: |
+  Read-only research task. Do NOT make any changes to the codebase.
+
+  1. Review the TopCoat repository at https://github.com/tokio-rs/topcoat:
+     - README, documentation, and architecture overview
+     - Key features and design philosophy
+     - Crate structure and dependencies
+     - Latest release version and changelog
+     - Open issues and pull request activity
+  2. Also review the original article that introduced TopCoat:
+     - https://daily.dev/posts/github---tokio-rs-topcoat-a-batteries-included-framework-for-building-web-apps-vvuisd732
+  3. Compare TopCoat with AnkiTov's current stack (Loco.rs + SeaORM + Axum):
+     - How does TopCoat's batteries-included approach compare to Loco.rs?
+     - Does it offer any advantages for AnkiTov's use case?
+     - What's the migration cost if it were worth pursuing?
+     - Middleware support, auth, WebSocket, multipart uploads
+  4. Assess ecosystem maturity and community:
+     - GitHub stars, contributors, commit frequency
+     - crates.io download stats
+     - Documentation quality and examples
+     - Any notable adopters or production deployments
+     - Maintenance trajectory (actively maintained? stalled?)
+  5. Write findings to `specs/research/YYYY-MM-DD-topcoat-review.md` with:
+     - Summary of TopCoat's current state
+     - Architecture and feature comparison with Loco.rs
+     - Feasibility for AnkiTov
+     - Recommendation: Useful to track / Investigate further / Adopt / Skip
+     - Next review date recommendation (if any)
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+
+prompt: |
+  Three-month review of TopCoat — a batteries-included web framework
+  for Rust built on tokio. Assess maturity, compare with Loco.rs,
+  and recommend whether AnkiTov should track or adopt it.
+  Write findings to specs/research/.

@@ -1,0 +1,122 @@
+version: "1.0.0"
+title: "Scaffold ankitov-core Shared Crate"
+description: >
+  Extract pure-logic modules from backend/src/services/ into a new
+  ankitov-core crate that compiles to both native (rlib) and WASM (cdylib).
+  Implements the WASM strategy agreed in chat 2026-07-13:
+  tactical WASM for the PWA, not a ground-up rewrite.
+
+max_turns: 40
+
+instructions: |
+  You are running a **PREVIEW-ONLY** pass for a tactical WASM extraction on AnkiTov.
+
+  ## Critical Constraint
+  **DO NOT modify any files. DO NOT create any directories. DO NOT run any commands that write or delete.** This is a presentation pass — the human will review and decide whether to proceed.
+
+  ## Context (from 2026-07-13 architecture discussion)
+
+  The AnkiTov backend uses rusqlite (native C FFI), AnkiConnect (localhost
+  HTTP), and process spawning (anki_launcher). These CANNOT compile to WASM
+  and never will — they're design features, not bugs.
+
+  WHAT TO EXTRACT — pure Rust computation with zero system deps:
+  - backend/src/services/fsrs_sort.rs     (Pure math: D/S retrieval, urgency sort)
+  - backend/src/services/capsule_slicer.rs (Pure logic: card pool slicing, spill-to-next)
+  - backend/src/services/track_health.rs   (Data transformations, aggregation logic)
+
+  WHAT TO LEAVE IN BACKEND — still needed, stays native:
+  - capsule_generator.rs     (orchestrates DB + services)
+  - capsule_generator_job.rs (background job runner)
+  - telemetry_ingestor.rs    (SeaORM writes)
+  - audit_logger.rs          (SeaORM writes)
+  - forensic_reader.rs       (rusqlite FFI)
+  - deck_health.rs           (composes forensic + AnkiConnect)
+  - anki_connect.rs          (reqwest to localhost:8766)
+  - anki_launcher.rs         (process spawn)
+  - rig_nlu.rs               (Rig pipeline, WASM experimental)
+
+  ## Preview — Analyze and Present Only
+
+  ### Step 1: Audit the Source Files
+  - Read all 3 files to be extracted
+  - Identify every dependency they use (crate imports, module-level deps)
+  - Note any backend-specific types (SeaORM, Loco, rusqlite, etc.) that would need refactoring
+  - Identify the public function signatures that need WASM bindings
+
+  ### Step 2: Design the Target Structure
+  Present exactly what `crates/ankitov-core/` would look like:
+  - Proposed Cargo.toml (full content, show it)
+  - Proposed lib.rs structure
+  - Which functions get #[wasm_bindgen] annotations
+  - Which imports need to change (e.g., backend-specific types → std types)
+
+  ### Step 3: Impact Analysis
+  - Show the diff for backend/Cargo.toml (add dep, remove deps from extracted files)
+  - Name the 3 files that would be removed from backend/src/services/
+  - Show what use statements change in the backend for each extracted file
+  - List any downstream files that import from the 3 extracted modules
+  - Estimate WASM bundle size (look at pure Rust LoC count as proxy)
+
+  ### Step 4: Risk Assessment
+  - Are there any circular dependency risks?
+  - Are any trait implementations shared between extracted and non-extracted code?
+  - Any tests that need to move too?
+  - Are there any feature-gates or cfg attributes on the extracted code?
+
+  ## Output Format
+
+  ```
+  ╔══════════════════════════════════════════════════════════╗
+  ║  PREVIEW: ankitov-core Shared Crate Scaffold             ║
+  ║  Generated: <date>                                       ║
+  ║  ⚠️ NO CHANGES MADE — Review required to execute        ║
+  ╚══════════════════════════════════════════════════════════╝
+
+  ## 1. Source Audit
+  ### fsrs_sort.rs
+  - Imports: [...]
+  - Backend deps to refactor: [...]
+  - Public API: [...]
+  ...
+
+  ## 2. Proposed Structure
+  ### crates/ankitov-core/Cargo.toml
+  \`\`\`toml
+  [package]
+  name = "ankitov-core"
+  ...
+  \`\`\`
+
+  ### crates/ankitov-core/src/lib.rs
+  \`\`\`rust
+  ...
+  \`\`\`
+
+  ## 3. Backend Impact
+  - backend/Cargo.toml: diff
+  - Files to remove: ...
+  - Files that import from extracted modules: ...
+
+  ## 4. Risks
+  - High/Medium/Low items
+
+  ## 5. Approval Prompt
+  To execute, run: goose run recipes/scaffold-ankitov-core.yaml --mode execute
+  (Or delete the preview flag and unset max_turns to 40)
+  ```
+
+  ## Safety Rules
+  - READ ONLY. No writes, no creates, no deletes, no moves.
+  - If you accidentally write anything, immediately flag it.
+  - Read files with `cat` or `analyze` — never with edit/write.
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 600
+    bundled: true
+  - type: builtin
+    name: analyze
+    timeout: 300
+    bundled: true

@@ -1,0 +1,43 @@
+version: "1.0.0"
+title: "Entroly Context Compression Review"
+description: >
+  Review the entroly project (https://github.com/juyterman1000/entroly) for
+  potential use in the AnkiTov factory harness tooling stack. Benchmark against
+  the existing codebase-memory-mcp approach and produce a recommendation.
+
+parameters:
+  - key: benchmark_tasks
+    input_type: string
+    requirement: optional
+    description: "Comma-separated list of AnkiTov task categories to benchmark (e.g., 'route_analysis,model_discovery,test_generation')"
+
+settings:
+  max_turns: 20
+
+instructions: |
+  You are reviewing context compression tooling for the AnkiTov factory harness.
+
+  ## Context
+  AnkiTov is a Rust-native knowledge retention infrastructure at
+  /Volumes/YBG1TB4Mac/AnkiTov using Loco.rs, SeaORM, libSQL, Rig Core,
+  and Jujutsu for VCS. The factory harness currently uses:
+  - codebase-memory-mcp (DeusData) for graph-indexed context delivery
+  - TaskLite (SQLite-backed CLI) for task tracking
+
+  ## Entroly Review
+  1. Visit https://github.com/juyterman1000/entroly
+  2. Understand its approach to context compression
+  3. Compare against codebase-memory-mcp on these dimensions:
+     - Token compression ratio
+     - Retrieval latency
+     - Integration complexity
+     - License compatibility with AnkiTov factory harness
+  4. Produce a structured recommendation: Adopt / Reject / Defer
+
+  ## Benchmark
+  If benchmark_tasks is provided, run the specified task categories against
+  both tools and compare outputs.
+
+  ## Output
+  Write findings to: workspace/entroly_review_2026_07.md
+  Format: adoption decision + supporting evidence + recommended next steps

@@ -1,0 +1,12 @@
+# ankitov goose config
+# Goose Configuration for AnkiTov
+- Config path: /Volumes/YBG1TB4Mac/AnkiTov/goose_config.yaml
+- Provider: openrouter (deepseek/deepseek-chat)
+- Mode: smart_approve
+- GOOSE_TOOLSHIM: true
+- GOOSE_THINKING_EFFORT: off
+- GOOSE_TELEMETRY_ENABLED: false
+- Extensions enabled: developer, skills, extensionmanager, summon, apps, todo, analyze, memory, chatrecall, ankitov-context-server (budget gate)
+- Slash commands: research_codebase, design_discussion, create_plan
+- Session persistence: Sessions stored in SQLite (sessions.db). Resume via `goose session -r` or `goose session -r --name <name>`
+

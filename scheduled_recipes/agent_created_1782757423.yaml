@@ -1,0 +1,73 @@
+version: "1.0.0"
+title: "Anki Metrics for Schools — Blog Post Writeup"
+description: >
+  Write a comprehensive blog post about AnkiTov's school-optimized metrics
+  approach. Covers why FSRS should not be reinvented, the gap between
+  individual spaced repetition and institutional education needs, and the
+  five metrics AnkiTov proposes: Practice Adherence Score (PAS), Sporadic
+  Practice Index (SPI), Gap Analysis, Deck Suitability Index (DSI), and
+  Class Cohort Summary. Written for an audience of educators, EdTech
+  developers, and Anki power users interested in institutional deployment.
+prompt: |
+  Write a polished, publication-ready blog post about AnkiTov's school-optimized
+  metrics. The post should be engaging, technically accurate, and accessible to
+  both educators and developers.
+
+  ## Source Material
+
+  Read the following files for context:
+  - specs/school-metrics.md — the full spec with metric definitions, formulas, and acceptance scenarios
+  - workspace/Strategic_Blueprint.md — AnkiTov vision and 5-layer architecture
+  - docs-repository/internal-runbooks/anki-operations-access.md — Zone 1/2/3 architecture
+
+  ## Key Points to Cover
+
+  1. **The Problem:** Anki is incredible for motivated individuals but fails in
+     schools because it assumes daily attendance. The #1 failure mode in
+     institutional education is not suboptimal scheduling — it's inconsistent
+     practice. FSRS optimizes the scheduler for someone who shows up. What
+     about the students who don't?
+
+  2. **Don't Reinvent FSRS:** Anki 24.x ships with FSRS (Free Spaced Repetition
+     Scheduler) which provides true memory stability, retrievability, and
+     optimal interval calculations per card. Any metrics layer that tries to
+     approximate retention with fixed grade-to-retention weights is a crude
+     knockoff. Respect the memory science; build the operational overlay.
+
+  3. **The Five School Metrics:**
+     - Practice Adherence Score (PAS) — "Is this student showing up?" 0-100
+       scale based on actual reviews vs due cards per day. A 200-card cram
+       after 6 missed days scores ~14, not 100.
+     - Sporadic Practice Index (SPI) — "Is this student cramming?" Coefficient
+       of variation × inverse coverage. 0.0 = steady daily, 0.8+ = erratic.
+     - Gap Analysis — "How long between sessions?" Max gap, average gap, gaps
+       over 3/7 days. Teachers need the worst gaps, not averages.
+     - Deck Suitability Index (DSI) — "Is this deck too hard or too easy?"
+       Lapse rate + ease factor + mature rate + time per card. Pinpoints
+       struggle subdecks.
+     - Class Cohort Summary — "How is the whole class doing?" Aggregates all
+       metrics across students. Flags exceptions. PAS distribution percentiles.
+
+  4. **FSRS Complements, Not Competes:** Clear table showing what FSRS does
+     (per-card memory stability, optimal intervals, individual forecasts) vs
+     what AnkiTov adds (cross-student visibility, adherence monitoring, cohort
+     aggregation, exception detection, deck suitability).
+
+  5. **Real-World Scenario:** Walk through a classroom example — 28 students,
+     one teacher, Stage 1 Biology deck. Show how PAS, SPI, and DSI surface
+     actionable insights the teacher couldn't get from Anki alone.
+
+  ## Style
+
+  - Conversational but technically precise
+  - Use concrete numbers and examples, not abstractions
+  - Include code-like snippets or JSON examples where helpful
+  - Target length: 1500-2500 words
+  - Title should be compelling and shareable
+  - Include a brief intro hook and a call-to-action conclusion
+  - Format as Markdown ready for publication
+
+  ## Output
+
+  Write the blog post to `blog/anki-metrics-for-schools.md`. Create the
+  `blog/` directory if it doesn't exist.

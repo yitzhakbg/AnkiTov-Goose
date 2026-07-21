@@ -1,0 +1,13 @@
+version: "1.0.0"
+title: "Update AnkiPlayGround Profiles"
+description: "Regenerates realistic practice data for all 28 student profiles in AnkiPlayGround, producing a fresh spread of review patterns across star students, consistent practicers, weekend skippers, inconsistent students, struggling students, new joiners, and drop-offs."
+instructions: |
+  Run the profiles_update.py script to regenerate realistic practice data for all student profiles.
+
+  1. Change to the AnkiPlayGround directory: cd /Volumes/YBG1TB4Mac/AnkiTov/AnkiPlayGround
+  2. Run the script: python3 profiles_update.py
+  3. Verify the output shows all 28 profiles were processed with review counts for July 10-14
+  4. Report the total number of reviews generated and any profiles that had errors
+prompt: "Run profiles_update.py to regenerate all 28 profiles in AnkiPlayGround with realistic classroom practice data"
+settings:
+  max_turns: 10

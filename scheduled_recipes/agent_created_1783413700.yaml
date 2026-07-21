@@ -1,0 +1,34 @@
+version: "1.0.0"
+title: "Examine Agency Agents"
+description: >
+  Examine the msitarzewski/agency-agents repository for potential patterns,
+  architecture insights, or reusable components relevant to the AnkiTov
+  factory harness tooling stack. Scheduled for Sept 7, 2026.
+
+instructions: |
+  Clone https://github.com/msitarzewski/agency-agents.git to a temporary
+  directory. Analyze the repository structure thoroughly:
+
+  1. Identify agent definition, registration, and dispatch patterns
+  2. Evaluate inter-agent communication mechanisms (MCP, stdio, HTTP, etc.)
+  3. Assess error handling and retry strategies
+  4. Document configuration and extensibility patterns
+  5. Benchmark against AnkiTov factory harness requirements (Rig Core,
+     MCP stdio servers, tasklite, codebase-memory-mcp)
+  6. Identify novel approaches or reusable concepts
+  7. Write structured report to workspace/agency-agents-review-YYYY-MM-DD.md
+  8. Clean up temporary directory
+
+  Output a comprehensive markdown report with clear sections: Overview,
+  Architecture, Agent Patterns, Communication, Error Handling, Comparison
+  to AnkiTov Stack, Recommendations.
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 600
+    bundled: true
+
+prompt: |
+  Execute the examination of agency-agents as described in the instructions.
+  Produce the report and clean up after yourself.
