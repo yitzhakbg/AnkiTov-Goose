@@ -1,0 +1,192 @@
+active_provider: openrouter
+slash_commands:
+  - command: "research_codebase"
+    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-research.yaml"
+  - command: "design_discussion"
+    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-design.yaml"
+  - command: "create_plan"
+    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-plan.yaml"
+providers:
+  custom_deepseek:
+    enabled: true
+    model: deepseek-v4-flash
+    configured: true
+  openrouter:
+    enabled: true
+    model: openrouter/auto-beta
+    configured: true
+GOOSE_MODE: smart_approve
+GOOSE_TOOLSHIM: true
+GOOSE_THINKING_EFFORT: off
+GOOSE_TELEMETRY_ENABLED: false
+
+# OpenRouter Auto Router config — auto-selects cheapest adequate model per task
+# cost_quality_tradeoff: 9 = aggressively favors cheap models (0=quality, 10=cheapest)
+# allowed_models: restrict the pool; individual Google models allowed where cheap,
+#   but google/gemini-3.5-flash ($9/M completion) and google/* wildcard excluded
+#   (Gemini "Flash" naming is deceptive — some are 45× more expensive than DeepSeek v4-flash)
+OPENROUTER_PARAMETERS:
+  plugins:
+    - id: auto-router
+      cost_quality_tradeoff: 9
+      allowed_models:
+        - deepseek/*
+        - anthropic/claude-sonnet-*
+        - openai/gpt-5*
+        - mistral/*
+        - qwen/*
+        # Cheap Google models only (exact matches — no wildcard to avoid the expensive traps)
+        - google/gemma-3-4b-it
+        - google/gemma-3-12b-it
+        - google/gemma-3-27b-it
+        - google/gemma-4-26b-a4b-it
+        - google/gemma-4-31b-it
+        - google/gemini-2.5-flash-lite
+extensions:
+  developer:
+    enabled: true
+    type: platform
+    name: developer
+    description: Write and edit files, and execute shell commands
+    display_name: Developer
+    bundled: true
+    available_tools: []
+  skills:
+    enabled: true
+    type: platform
+    name: skills
+    description: Discover and provide skill instructions from filesystem and builtins
+    display_name: Skills
+    bundled: true
+    available_tools: []
+  extensionmanager:
+    enabled: true
+    type: platform
+    name: Extension Manager
+    description: Enable extension management tools for discovering, enabling, and disabling extensions
+    display_name: Extension Manager
+    bundled: true
+    available_tools: []
+  summon:
+    enabled: true
+    type: platform
+    name: summon
+    description: Load knowledge and delegate tasks to subagents
+    display_name: Summon
+    bundled: true
+    available_tools: []
+  apps:
+    enabled: true
+    type: platform
+    name: apps
+    description: Create and manage custom Goose apps through chat. Apps are HTML/CSS/JavaScript and run in sandboxed windows.
+    display_name: Apps
+    bundled: true
+    available_tools: []
+  todo:
+    enabled: true
+    type: platform
+    name: todo
+    description: Enable a todo list for goose so it can keep track of what it is doing
+    display_name: Todo
+    bundled: true
+    available_tools: []
+  analyze:
+    enabled: true
+    type: platform
+    name: analyze
+    description: 'Analyze code structure with tree-sitter: directory overviews, file details, symbol call graphs'
+    display_name: Analyze
+    bundled: true
+    available_tools: []
+  code_execution:
+    enabled: false
+    type: platform
+    name: code_execution
+    description: Goose will make extension calls through code execution, saving tokens
+    display_name: Code Mode
+    bundled: true
+    available_tools: []
+  orchestrator:
+    enabled: false
+    type: platform
+    name: orchestrator
+    description: 'Manage agent sessions: list, view, start, send messages, interrupt, and stop agents'
+    display_name: Orchestrator
+    bundled: true
+    available_tools: []
+  summarize:
+    enabled: false
+    type: platform
+    name: summarize
+    description: Load files/directories and get an LLM summary in a single call
+    display_name: Summarize
+    bundled: true
+    available_tools: []
+  chatrecall:
+    enabled: true
+    type: platform
+    name: chatrecall
+    description: Search past conversations and load session summaries for contextual memory
+    display_name: Chat Recall
+    bundled: true
+    available_tools: []
+  tom:
+    enabled: true
+    type: platform
+    name: tom
+    description: Inject custom context into every turn via GOOSE_MOIM_MESSAGE_TEXT and GOOSE_MOIM_MESSAGE_FILE environment variables
+    display_name: Top Of Mind
+    bundled: true
+    available_tools: []
+  computercontroller:
+    enabled: false
+    type: builtin
+    name: computercontroller
+    description: General computer control tools that don't require you to be a developer or engineer.
+    display_name: Computer Controller
+    timeout: 300
+    bundled: true
+    available_tools: []
+  autovisualiser:
+    enabled: false
+    type: builtin
+    name: autovisualiser
+    description: Data visualization and UI generation tools
+    display_name: Auto Visualiser
+    timeout: 300
+    bundled: true
+    available_tools: []
+  memory:
+    enabled: true
+    type: builtin
+    name: memory
+    description: Teach goose your preferences as you go.
+    display_name: Memory
+    timeout: 600
+    bundled: true
+    available_tools: []
+  tutorial:
+    enabled: false
+    type: builtin
+    name: tutorial
+    description: Access interactive tutorials and guides
+    display_name: Tutorial
+    timeout: 300
+    bundled: true
+    available_tools: []
+  # External High-Performance Context Connections
+  headroom-mcp:
+    enabled: true
+    type: stdio
+    name: Headroom MCP
+    cmd: "/Users/ybg/.local/share/mise/installs/python/3.12/bin/headroom"
+    args: ["mcp", "serve", "--proxy-url", "http://127.0.0.1:8787"]
+    timeout: 900
+  ankitov-context-server:
+    enabled: true
+    type: stdio
+    name: AnkiTov Context Engine
+    cmd: "/Volumes/YBG1TB4Mac/AnkiTov/ankitov-budget-gate/target/release/ankitov-budget-gate"
+    args: []
+    timeout: 600

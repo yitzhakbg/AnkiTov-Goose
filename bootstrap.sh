@@ -172,6 +172,18 @@ if [ -d "$ANKITOV_GOOSE_RECIPES" ]; then
 fi
 
 # ------------------------------------------------------------------
+# 8. Headroom deploy script
+# ------------------------------------------------------------------
+echo ""
+echo "─── 8. Headroom Deploy Script ───"
+if [ -f "$GOOSE_REPO/scripts/deploy-headroom.sh" ]; then
+  link "$GOOSE_REPO/scripts/deploy-headroom.sh" \
+       "$HOME/.local/bin/deploy-headroom.sh" \
+       "headroom deploy "
+  echo "  ℹ️  To install Headroom: bash ~/.local/bin/deploy-headroom.sh"
+fi
+
+# ------------------------------------------------------------------
 # 9. AnkiTov project config notice
 # ------------------------------------------------------------------
 echo ""

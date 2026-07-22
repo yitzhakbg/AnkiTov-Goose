@@ -118,7 +118,7 @@ extensions:
     name: memory
     description: Teach goose your preferences as you go.
     display_name: Memory
-    timeout: 600
+    timeout: 900
     bundled: true
   tutorial:
     enabled: false
@@ -129,6 +129,17 @@ extensions:
     timeout: 300
     bundled: true
     available_tools: []
+  headroom-mcp:
+    enabled: true
+    type: stdio
+    name: Headroom MCP
+    cmd: /Users/ybg/.local/share/mise/installs/python/3.12/bin/headroom
+    args:
+    - mcp
+    - serve
+    - --proxy-url
+    - http://127.0.0.1:8787
+    timeout: 900
 OPENROUTER_HOST: https://localhost:8787
 active_provider: openai
 providers:
@@ -141,10 +152,10 @@ providers:
     model: agnes-2.5-flash
     configured: true
 GOOSE_TELEMETRY_ENABLED: true
-GOOSE_THINKING_EFFORT: max
+GOOSE_THINKING_EFFORT: medium
 OPENAI_BASE_URL: http://localhost:8787/v1
 OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions
 OPENAI_TIMEOUT: '600'
 OPENAI_TARGET_API_URL: https://openrouter.ai/api/v1
-# GOOSE_SHELL: (set per-machine — see bootstrap.sh)
+# GOOSE_SHELL: set per-machine — see bootstrap.sh

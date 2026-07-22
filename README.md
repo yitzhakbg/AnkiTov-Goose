@@ -26,9 +26,12 @@ Combined with the AnkiTov source repo, a single `bootstrap.sh` run:
 
 ```
 ankitov-goose/
-├── bootstrap.sh              🚀  Master setup script
-├── config/                        Global Goose configuration
-│   └── global-config.yaml         ~/.config/goose/config.yaml
+├── bootstrap.sh                  🚀  Master setup script
+├── scripts/
+│   └── deploy-headroom.sh        🚀  Headroom proxy installer (macOS + Linux)
+├── config/                        Goose configuration
+│   ├── global-config.yaml         ~/.config/goose/config.yaml
+│   └── project-config.yaml        AnkiTov project config (goose_config.yaml)
 ├── custom_providers/              Custom LLM provider definitions
 │   └── custom_agnes.json          Agnes AI provider
 ├── recipes/                       System-level Goose recipes
@@ -52,7 +55,8 @@ ankitov-goose/
 │   ├── scheduled-tasks.txt        Pending & active scheduled tasks
 │   └── wasm-strategy.txt          WASM tactical extraction plan
 ├── schedule.json                   Scheduled job registry (templated)
-└── projects.json                   Project tracking metadata (templated)
+├── projects.json                   Project tracking metadata (templated)
+└── .gitignore                      Session files, OS files, bak files
 ```
 
 ## What Goes Where
