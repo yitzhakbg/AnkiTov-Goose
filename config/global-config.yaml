@@ -158,4 +158,4 @@ OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions
 OPENAI_TIMEOUT: '600'
 OPENAI_TARGET_API_URL: https://openrouter.ai/api/v1
-# GOOSE_SHELL: set per-machine — see bootstrap.sh
+GOOSE_SHELL: /Users/ybg/.local/bin/goose-sh
