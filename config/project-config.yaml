@@ -13,7 +13,7 @@ providers:
     configured: true
   openrouter:
     enabled: true
-    model: openrouter/auto-beta
+    model: openrouter/auto
     configured: true
   openrouter-qwen-coder:
     enabled: true
@@ -24,20 +24,12 @@ GOOSE_TOOLSHIM: true
 GOOSE_THINKING_EFFORT: off
 GOOSE_TELEMETRY_ENABLED: false
 
-# Model strategy: use specific models directly (not Auto Router).
-# OpenRouter's Auto Router (openrouter/auto-beta) routes to provider endpoints
-# that don't support tool calling, which Goose requires for extensions.
-# Default: deepseek/deepseek-v4-flash (cheap, proven tool support)
-# Hard Rust: qwen/qwen-3-coder-235b-a22b  (type manually in model field)
+# Model: openrouter/auto (standard OpenRouter routing, not the Auto Router plugin).
+# Unlike openrouter/auto-beta, this doesn't use the plugin-based router that
+# caused "No endpoints found" errors. It's a simpler model-name-based router
+# that may handle tool calling better.
 # Dedicated CLI provider 'openrouter-qwen-coder' for terminal sessions:
 #   goose session -r --provider openrouter-qwen-coder
-# NOTE: OpenRouter Auto Router (openrouter/auto-beta) is NOT used.
-# It routes to provider endpoints that don't support tool calling,
-# which Goose requires for extensions (analyze, developer, memory_save).
-# Use specific models directly:
-#   - deepseek/deepseek-v4-flash  (daily driver, cheap, proven tool support)
-#   - qwen/qwen-3-coder-235b-a22b (hard Rust tasks — type manually in model field)
-#   - anthropic/claude-sonnet-4   (alternative for complex work)
 extensions:
   developer:
     enabled: true

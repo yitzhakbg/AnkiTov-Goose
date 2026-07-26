@@ -145,7 +145,7 @@ active_provider: openai
 providers:
   openai:
     enabled: true
-    model: deepseek/deepseek-v4-flash
+    model: openrouter/auto
     configured: true
   custom_agnes:
     enabled: true
@@ -153,13 +153,11 @@ providers:
     configured: true
 GOOSE_TELEMETRY_ENABLED: true
 GOOSE_THINKING_EFFORT: high
-# NOTE: OpenRouter Auto Router (openrouter/auto-beta) is NOT used.
-# It routes to provider endpoints that don't support tool calling,
-# which Goose requires for extensions (analyze, developer, memory_save).
-# Use specific models directly:
-#   - deepseek/deepseek-v4-flash  (daily driver, cheap, proven tool support)
-#   - qwen/qwen-3-coder-235b-a22b (hard Rust tasks — type manually in model field)
-#   - anthropic/claude-sonnet-4   (alternative for complex work)
+# Model: openrouter/auto (standard OpenRouter routing, not the Auto Router plugin).
+# Unlike openrouter/auto-beta, this doesn't use the plugin-based router that
+# caused "No endpoints found" errors. It's a simpler model-name-based router
+# that may handle tool calling better.
+# Falls back to deepseek/deepseek-v4-flash if openrouter/auto doesn't work.
 OPENAI_BASE_URL: http://localhost:8787/v1
 OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions
