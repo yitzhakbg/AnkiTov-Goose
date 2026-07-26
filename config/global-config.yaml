@@ -145,14 +145,44 @@ active_provider: openai
 providers:
   openai:
     enabled: true
-    model: deepseek/deepseek-v4-flash
+    model: openrouter/auto-beta
     configured: true
   custom_agnes:
     enabled: true
     model: agnes-2.5-flash
     configured: true
 GOOSE_TELEMETRY_ENABLED: true
-GOOSE_THINKING_EFFORT: medium
+GOOSE_THINKING_EFFORT: high
+
+# OpenRouter Auto Router params — passed through Headroom proxy to OpenRouter
+# Tradeoff: 7 = balanced quality/cost (0=quality, 10=cheapest)
+# Tiered model pool: cheap for simple, Qwen3 Coder for hard Rust
+OPENROUTER_PARAMETERS:
+  plugins:
+    - id: auto-router
+      cost_quality_tradeoff: 7
+      allowed_models:
+        # 🟢 Cheap — daily driver, simple tasks
+        - deepseek/deepseek-v4-flash
+        - microsoft/phi-4
+        - google/gemma-3-27b-it
+        - google/gemini-2.5-flash-lite
+        - google/gemma-4-26b-a4b-it
+        - google/gemma-4-31b-it
+        - google/gemma-3-12b-it
+        - google/gemma-3-4b-it
+
+        # 🟡 Medium — medium Rust, frontend, i18n, design
+        - qwen/qwen-3-92b
+        - meta-llama/llama-4-*
+        - mistral/mistral-large-3
+        - mistral/*
+
+        # 🔴 Hard — complex architecture, Rust systems, FSRS math
+        - qwen/qwen-3-coder-235b-a22b
+        - deepseek/deepseek-v4-pro
+        - anthropic/claude-sonnet-4
+        - openai/gpt-5*
 OPENAI_BASE_URL: http://localhost:8787/v1
 OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions
