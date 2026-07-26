@@ -153,36 +153,24 @@ providers:
     configured: true
 GOOSE_TELEMETRY_ENABLED: true
 GOOSE_THINKING_EFFORT: high
-
 # OpenRouter Auto Router params — passed through Headroom proxy to OpenRouter
 # Tradeoff: 7 = balanced quality/cost (0=quality, 10=cheapest)
-# Tiered model pool: cheap for simple, Qwen3 Coder for hard Rust
+# IMPORTANT: Only models that support tool/function calling are listed.
+# Goose requires tool calling for extensions (analyze, developer, etc.).
+# Models like Phi-4, Gemma, Gemini Flash Lite, Llama 4 do NOT support
+# tool calling on OpenRouter — they'd cause "No endpoints found" errors.
 OPENROUTER_PARAMETERS:
   plugins:
-    - id: auto-router
-      cost_quality_tradeoff: 7
-      allowed_models:
-        # 🟢 Cheap — daily driver, simple tasks
-        - deepseek/deepseek-v4-flash
-        - microsoft/phi-4
-        - google/gemma-3-27b-it
-        - google/gemini-2.5-flash-lite
-        - google/gemma-4-26b-a4b-it
-        - google/gemma-4-31b-it
-        - google/gemma-3-12b-it
-        - google/gemma-3-4b-it
-
-        # 🟡 Medium — medium Rust, frontend, i18n, design
-        - qwen/qwen-3-92b
-        - meta-llama/llama-4-*
-        - mistral/mistral-large-3
-        - mistral/*
-
-        # 🔴 Hard — complex architecture, Rust systems, FSRS math
-        - qwen/qwen-3-coder-235b-a22b
-        - deepseek/deepseek-v4-pro
-        - anthropic/claude-sonnet-4
-        - openai/gpt-5*
+  - id: auto-router
+    cost_quality_tradeoff: 7
+    allowed_models:
+    - deepseek/deepseek-v4-flash
+    - qwen/qwen-3-92b
+    - mistral/mistral-large-3
+    - qwen/qwen-3-coder-235b-a22b
+    - deepseek/deepseek-v4-pro
+    - anthropic/claude-sonnet-4
+    - openai/gpt-5*
 OPENAI_BASE_URL: http://localhost:8787/v1
 OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions

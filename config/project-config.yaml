@@ -26,12 +26,12 @@ GOOSE_TELEMETRY_ENABLED: false
 
 # OpenRouter Auto Router config — auto-selects cheapest adequate model per task
 # cost_quality_tradeoff: 7 = balanced quality/cost (0=quality, 10=cheapest)
-# Tiered model pool:
-#   🟢 Cheap: DeepSeek V4 Flash, Phi-4, Gemma 3/4, Gemini 2.5 Flash Lite
-#   🟡 Medium: Qwen3 92B, Llama 4, Mistral Large 3
+# Tiered model pool (all support tool calling — required by Goose extensions):
+#   🟢 Cheap: DeepSeek V4 Flash
+#   🟡 Medium: Qwen3 92B, Mistral Large 3
 #   🔴 Hard: Qwen3 Coder 235B, DeepSeek V4 Pro, Claude Sonnet 4, GPT-5
-# Google models are individually listed (no wildcard) to avoid expensive traps
-# like google/gemini-3.5-flash ($9/M completion = 45× DeepSeek V4 Flash)
+# Models like Phi-4, Gemma, Gemini Flash Lite, Llama 4 are excluded because
+# they do NOT support tool/function calling on OpenRouter (causes 404 errors).
 # Dedicated provider 'openrouter-qwen-coder' available for explicit hard-Rust tasks:
 #   goose session -r --provider openrouter-qwen-coder
 OPENROUTER_PARAMETERS:
@@ -41,24 +41,19 @@ OPENROUTER_PARAMETERS:
       # while still being cost-conscious for simple ones.
       # (0=quality, 10=cheapest)
       cost_quality_tradeoff: 7
+      # IMPORTANT: Only models that support tool/function calling are listed.
+      # Goose requires tool calling for extensions (analyze, developer, etc.).
+      # Models like Phi-4, Gemma, Gemini Flash Lite, Llama 4 do NOT support
+      # tool calling on OpenRouter — they'd cause "No endpoints found" errors.
       allowed_models:
-        # 🟢 Cheap tier — daily driver, simple tasks, quick refactors
+        # 🟢 Cheap — daily driver, simple tasks
         - deepseek/deepseek-v4-flash
-        - microsoft/phi-4
-        - google/gemma-3-27b-it
-        - google/gemini-2.5-flash-lite
-        - google/gemma-4-26b-a4b-it
-        - google/gemma-4-31b-it
-        - google/gemma-3-12b-it
-        - google/gemma-3-4b-it
 
-        # 🟡 Medium tier — medium-complexity Rust, frontend, i18n, design
+        # 🟡 Medium — medium Rust, frontend, i18n, design
         - qwen/qwen-3-92b
-        - meta-llama/llama-4-*
         - mistral/mistral-large-3
-        - mistral/*
 
-        # 🔴 Hard tier — complex architecture, Rust systems, FSRS math, orchestrations
+        # 🔴 Hard — complex architecture, Rust systems, FSRS math
         - qwen/qwen-3-coder-235b-a22b
         - deepseek/deepseek-v4-pro
         - anthropic/claude-sonnet-4
