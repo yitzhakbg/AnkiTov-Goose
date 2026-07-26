@@ -24,40 +24,20 @@ GOOSE_TOOLSHIM: true
 GOOSE_THINKING_EFFORT: off
 GOOSE_TELEMETRY_ENABLED: false
 
-# OpenRouter Auto Router config — auto-selects cheapest adequate model per task
-# cost_quality_tradeoff: 7 = balanced quality/cost (0=quality, 10=cheapest)
-# Tiered model pool (all support tool calling — required by Goose extensions):
-#   🟢 Cheap: DeepSeek V4 Flash
-#   🟡 Medium: Qwen3 92B, Mistral Large 3
-#   🔴 Hard: Qwen3 Coder 235B, DeepSeek V4 Pro, Claude Sonnet 4, GPT-5
-# Models like Phi-4, Gemma, Gemini Flash Lite, Llama 4 are excluded because
-# they do NOT support tool/function calling on OpenRouter (causes 404 errors).
-# Dedicated provider 'openrouter-qwen-coder' available for explicit hard-Rust tasks:
+# Model strategy: use specific models directly (not Auto Router).
+# OpenRouter's Auto Router (openrouter/auto-beta) routes to provider endpoints
+# that don't support tool calling, which Goose requires for extensions.
+# Default: deepseek/deepseek-v4-flash (cheap, proven tool support)
+# Hard Rust: qwen/qwen-3-coder-235b-a22b  (type manually in model field)
+# Dedicated CLI provider 'openrouter-qwen-coder' for terminal sessions:
 #   goose session -r --provider openrouter-qwen-coder
-OPENROUTER_PARAMETERS:
-  plugins:
-    - id: auto-router
-      # Tradeoff: 7 lets the router consider quality for hard tasks
-      # while still being cost-conscious for simple ones.
-      # (0=quality, 10=cheapest)
-      cost_quality_tradeoff: 7
-      # IMPORTANT: Only models that support tool/function calling are listed.
-      # Goose requires tool calling for extensions (analyze, developer, etc.).
-      # Models like Phi-4, Gemma, Gemini Flash Lite, Llama 4 do NOT support
-      # tool calling on OpenRouter — they'd cause "No endpoints found" errors.
-      allowed_models:
-        # 🟢 Cheap — daily driver, simple tasks
-        - deepseek/deepseek-v4-flash
-
-        # 🟡 Medium — medium Rust, frontend, i18n, design
-        - qwen/qwen-3-92b
-        - mistral/mistral-large-3
-
-        # 🔴 Hard — complex architecture, Rust systems, FSRS math
-        - qwen/qwen-3-coder-235b-a22b
-        - deepseek/deepseek-v4-pro
-        - anthropic/claude-sonnet-4
-        - openai/gpt-5*
+# NOTE: OpenRouter Auto Router (openrouter/auto-beta) is NOT used.
+# It routes to provider endpoints that don't support tool calling,
+# which Goose requires for extensions (analyze, developer, memory_save).
+# Use specific models directly:
+#   - deepseek/deepseek-v4-flash  (daily driver, cheap, proven tool support)
+#   - qwen/qwen-3-coder-235b-a22b (hard Rust tasks — type manually in model field)
+#   - anthropic/claude-sonnet-4   (alternative for complex work)
 extensions:
   developer:
     enabled: true
