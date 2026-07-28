@@ -5,7 +5,25 @@ extensions:
     name: computercontroller
     description: General computer control tools that don't require you to be a developer or engineer.
     display_name: Computer Controller
+    timeout: 300
+    bundled: true
+    available_tools: []
+  memory:
+    enabled: true
+    type: builtin
+    name: memory
+    description: Teach goose your preferences as you go.
+    display_name: Memory
     timeout: 600
+    bundled: true
+    available_tools: []
+  autovisualiser:
+    enabled: false
+    type: builtin
+    name: autovisualiser
+    description: Data visualization and UI generation tools
+    display_name: Auto Visualiser
+    timeout: 300
     bundled: true
     available_tools: []
   tom:
@@ -56,27 +74,12 @@ extensions:
     display_name: Analyze
     bundled: true
     available_tools: []
-  chatrecall:
-    enabled: true
-    type: platform
-    name: chatrecall
-    description: Search past conversations and load session summaries for contextual memory
-    display_name: Chat Recall
-    bundled: true
   developer:
     enabled: true
     type: platform
     name: developer
     description: Write and edit files, and execute shell commands
     display_name: Developer
-    bundled: true
-    available_tools: []
-  summarize:
-    enabled: false
-    type: platform
-    name: summarize
-    description: Load files/directories and get an LLM summary in a single call
-    display_name: Summarize
     bundled: true
     available_tools: []
   orchestrator:
@@ -103,23 +106,22 @@ extensions:
     display_name: Apps
     bundled: true
     available_tools: []
-  autovisualiser:
-    enabled: false
-    type: builtin
-    name: autovisualiser
-    description: Data visualization and UI generation tools
-    display_name: Auto Visualiser
-    timeout: 300
+  chatrecall:
+    enabled: true
+    type: platform
+    name: chatrecall
+    description: Search past conversations and load session summaries for contextual memory
+    display_name: Chat Recall
     bundled: true
     available_tools: []
-  memory:
-    enabled: true
-    type: builtin
-    name: memory
-    description: Teach goose your preferences as you go.
-    display_name: Memory
-    timeout: 900
+  summarize:
+    enabled: false
+    type: platform
+    name: summarize
+    description: Load files/directories and get an LLM summary in a single call
+    display_name: Summarize
     bundled: true
+    available_tools: []
   tutorial:
     enabled: false
     type: builtin
@@ -129,17 +131,45 @@ extensions:
     timeout: 300
     bundled: true
     available_tools: []
+
+  # AST Code Graph (tree-sitter based, MCP-native)
+  code-graph:
+    enabled: true
+    type: stdio
+    name: Code Graph
+    cmd: code-graph-mcp
+    args:
+    - serve
+    timeout: 900
+
+  # Knowledge Graph Memory (official MCP server)
+  memory-graph:
+    enabled: true
+    type: stdio
+    name: Knowledge Graph Memory
+    cmd: npx
+    args:
+    - -y
+    - "@modelcontextprotocol/server-memory"
+    env:
+      # ARCHITECTURE NOTE: This path will be templated by bootstrap.sh.
+      # The {{ANKITOV_REPO}} variable is substituted during install.
+      MEMORY_FILE_PATH: "{{ANKITOV_REPO}}/.goose/memory-graph/memory.jsonl"
+    timeout: 600
+
+  # Headroom MCP — context compression for LLM requests
   headroom-mcp:
     enabled: true
     type: stdio
     name: Headroom MCP
-    cmd: /Users/ybg/.local/share/mise/installs/python/3.12/bin/headroom
+    cmd: "{{HEADROOM_CMD}}"
     args:
     - mcp
     - serve
     - --proxy-url
     - http://127.0.0.1:8787
     timeout: 900
+
 OPENROUTER_HOST: https://localhost:8787
 active_provider: openai
 providers:
@@ -153,14 +183,11 @@ providers:
     configured: true
 GOOSE_TELEMETRY_ENABLED: true
 GOOSE_THINKING_EFFORT: high
-# Model: openrouter/auto (standard OpenRouter routing, not the Auto Router plugin).
-# Unlike openrouter/auto-beta, this doesn't use the plugin-based router that
-# caused "No endpoints found" errors. It's a simpler model-name-based router
-# that may handle tool calling better.
-# Falls back to deepseek/deepseek-v4-flash if openrouter/auto doesn't work.
 OPENAI_BASE_URL: http://localhost:8787/v1
 OPENAI_HOST: http://localhost:8787
 OPENAI_BASE_PATH: v1/chat/completions
 OPENAI_TIMEOUT: '600'
 OPENAI_TARGET_API_URL: https://openrouter.ai/api/v1
-GOOSE_SHELL: /Users/ybg/.local/bin/goose-sh
+# ARCHITECTURE NOTE: GOOSE_SHELL points to a wrapper that sources user profile
+# for consistent PATH. bootstrap.sh will resolve the correct path.
+GOOSE_SHELL: "{{GOOSE_SHELL_CMD}}"

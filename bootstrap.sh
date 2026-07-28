@@ -27,7 +27,19 @@ echo "════════════════════════�
 echo "  Goose repo:   $GOOSE_REPO"
 echo "  AnkiTov repo:  $ANKITOV_REPO"
 echo "  Home:         $HOME"
+echo "  Architecture: $(uname -m)"
 echo ""
+
+# ------------------------------------------------------------------
+# Detect architecture
+# ------------------------------------------------------------------
+ARCH="$(uname -m)"
+case "$ARCH" in
+    arm64|aarch64)  ARCH_LABEL="ARM64 (Apple Silicon)" ;;
+    x86_64)         ARCH_LABEL="x86_64 (Intel)" ;;
+    *)              ARCH_LABEL="$ARCH" ;;
+esac
+echo "  ℹ️  Detected architecture: $ARCH_LABEL"
 
 # ------------------------------------------------------------------
 # Validate AnkiTov repo
@@ -39,6 +51,73 @@ fi
 
 GOOSE_HOME="$HOME/.local/share/goose"
 CONFIG_HOME="$HOME/.config/goose"
+
+# ------------------------------------------------------------------
+# Resolve headroom binary path
+# ------------------------------------------------------------------
+resolve_headroom_cmd() {
+  # Try mise-managed headroom first (most common for this project)
+  local mise_headroom
+  mise_headroom=$(mise which headroom 2>/dev/null || true)
+  if [ -n "$mise_headroom" ] && [ -x "$mise_headroom" ]; then
+    echo "$mise_headroom"
+    return
+  fi
+
+  # Try PATH
+  local path_headroom
+  path_headroom=$(which headroom 2>/dev/null || true)
+  if [ -n "$path_headroom" ] && [ -x "$path_headroom" ]; then
+    echo "$path_headroom"
+    return
+  fi
+
+  # Try common pip install locations
+  for candidate in \
+    "$HOME/.local/bin/headroom" \
+    "$HOME/.local/share/mise/installs/python/3.12/bin/headroom" \
+    "$HOME/.local/share/mise/installs/python/3/bin/headroom" \
+    "/usr/local/bin/headroom" \
+    "/opt/homebrew/bin/headroom"; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return
+    fi
+  done
+
+  # Fallback: just use "headroom" from PATH (will fail gracefully if not installed)
+  echo "headroom"
+}
+
+HEADROOM_CMD=$(resolve_headroom_cmd)
+echo "  ℹ️  Headroom binary: $HEADROOM_CMD"
+
+# ------------------------------------------------------------------
+# Resolve goose-sh path
+# ------------------------------------------------------------------
+resolve_goose_shell() {
+  local goose_sh
+  goose_sh=$(which goose-sh 2>/dev/null || true)
+  if [ -n "$goose_sh" ] && [ -x "$goose_sh" ]; then
+    echo "$goose_sh"
+    return
+  fi
+  # Common locations
+  for candidate in \
+    "$HOME/.local/bin/goose-sh" \
+    "/usr/local/bin/goose-sh" \
+    "/opt/homebrew/bin/goose-sh"; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return
+    fi
+  done
+  # Fallback — goose-sh is created by goose install
+  echo "$HOME/.local/bin/goose-sh"
+}
+
+GOOSE_SHELL_CMD=$(resolve_goose_shell)
+echo "  ℹ️  Goose shell: $GOOSE_SHELL_CMD"
 
 # ------------------------------------------------------------------
 # Helper: backup existing, then symlink
@@ -60,13 +139,33 @@ link() {
 }
 
 # ------------------------------------------------------------------
-# 1. Global Goose config
+# Helper: template-substitute a file, then link
+# ------------------------------------------------------------------
+template_and_link() {
+  local src="$1"
+  local dst="$2"
+  local label="${3:-}"
+
+  local tmpfile
+  tmpfile=$(mktemp /tmp/ankitov-template-XXXXXX)
+
+  sed -e "s|{{ANKITOV_REPO}}|$ANKITOV_REPO|g" \
+      -e "s|{{HEADROOM_CMD}}|$HEADROOM_CMD|g" \
+      -e "s|{{GOOSE_SHELL_CMD}}|$GOOSE_SHELL_CMD|g" \
+      -e "s|{{GOOSE_HOME}}|$GOOSE_HOME|g" \
+      "$src" > "$tmpfile"
+
+  link "$tmpfile" "$dst" "$label"
+}
+
+# ------------------------------------------------------------------
+# 1. Global Goose config (with path templating)
 # ------------------------------------------------------------------
 echo ""
 echo "─── 1. Global Goose Config ───"
-link "$GOOSE_REPO/config/global-config.yaml" \
-     "$CONFIG_HOME/config.yaml" \
-     "global config "
+template_and_link "$GOOSE_REPO/config/global-config.yaml" \
+                   "$CONFIG_HOME/config.yaml" \
+                   "global config "
 
 # ------------------------------------------------------------------
 # 2. Custom providers
@@ -172,10 +271,10 @@ if [ -d "$ANKITOV_GOOSE_RECIPES" ]; then
 fi
 
 # ------------------------------------------------------------------
-# 8. Headroom deploy script
+# 9. Headroom deploy script
 # ------------------------------------------------------------------
 echo ""
-echo "─── 8. Headroom Deploy Script ───"
+echo "─── 9. Headroom Deploy Script ───"
 if [ -f "$GOOSE_REPO/scripts/deploy-headroom.sh" ]; then
   link "$GOOSE_REPO/scripts/deploy-headroom.sh" \
        "$HOME/.local/bin/deploy-headroom.sh" \
@@ -184,12 +283,32 @@ if [ -f "$GOOSE_REPO/scripts/deploy-headroom.sh" ]; then
 fi
 
 # ------------------------------------------------------------------
-# 9. AnkiTov project config notice
+# 10. AnkiTov project config notice
 # ------------------------------------------------------------------
 echo ""
-echo "─── 9. AnkiTov Project Config ───"
+echo "─── 10. AnkiTov Project Config ───"
 echo "  ℹ️  Project config at: $ANKITOV_REPO/goose_config.yaml"
 echo "  ℹ️  Goose auto-detects it when cd'd into the AnkiTov directory."
+
+# ------------------------------------------------------------------
+# Architecture-specific notes
+# ------------------------------------------------------------------
+echo ""
+echo "─── Architecture Portability Notes ───"
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+  echo "  ✅ Running on ARM64 (Apple Silicon)"
+  echo "  ℹ️  If you need to run on Intel (x86_64) later:"
+  echo "     1. Install Rust x86_64 target: rustup target add x86_64-apple-darwin"
+  echo "     2. Install Intel Goose: brew install goose  (homebrew auto-detects arch)"
+  echo "     3. Rebuild budget gate: cd $ANKITOV_REPO/ankitov-budget-gate && cargo build --release"
+  echo "     4. Download Intel Anki from https://apps.ankiweb.net"
+else
+  echo "  ✅ Running on x86_64 (Intel)"
+  echo "  ℹ️  Architecture-specific actions taken:"
+  echo "     - Headroom binary resolved to: $HEADROOM_CMD"
+  echo "     - Budget gate may need rebuild: cd $ANKITOV_REPO/ankitov-budget-gate && cargo build --release"
+fi
+echo "  ℹ️  Homebrew prefix: $(brew --prefix 2>/dev/null || echo 'not found')"
 
 # ------------------------------------------------------------------
 # Verify
@@ -217,6 +336,7 @@ echo "       export OPENROUTER_API_KEY=\"sk-...\""
 echo "       export CUSTOM_AGNES_API_KEY=\"...\""
 echo "       export GOOSE_MODE=smart_approve"
 echo "       export GOOSE_TOOLSHIM=true"
-echo "    2. cd $ANKITOV_REPO"
-echo "    3. goose session -r  (resume last session)"
+echo "    2. See ARCHITECTURE.md for cross-platform portability notes"
+echo "    3. cd $ANKITOV_REPO"
+echo "    4. goose session -r  (resume last session)"
 echo "═══════════════════════════════════════════════════════════"

@@ -21,15 +21,30 @@ Combined with the AnkiTov source repo, a single `bootstrap.sh` run:
 - Registers your Goose apps and global memory store
 - Wires up AnkiTov project recipes (slash commands, subrecipes, spec generator)
 - Restores the scheduled job registry with correct paths
+- **Resolves architecture-specific paths** (ARM64 vs x86_64)
+
+## Cross-Architecture Support
+
+This repository is designed to work on both **Apple Silicon (ARM64)** and **Intel (x86_64)** Macs, with architecture-dependent path resolution handled by `bootstrap.sh`. Key differences:
+
+| Component | ARM64 Mac | Intel Mac |
+|-----------|----------|-----------|
+| Homebrew prefix | `/opt/homebrew` | `/usr/local` |
+| Goose binary | brew-installs ARM64 | brew-installs x86_64 |
+| Budget gate binary | must rebuild on target | must rebuild on target |
+| Rust target | `aarch64-apple-darwin` | `x86_64-apple-darwin` |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a full cross-platform portability audit.
 
 ## Repository Structure
 
 ```
 ankitov-goose/
-├── bootstrap.sh                  🚀  Master setup script
+├── bootstrap.sh                  🚀  Master setup script (arch-aware)
+├── ARCHITECTURE.md               🏛  Cross-platform portability audit
 ├── scripts/
 │   └── deploy-headroom.sh        🚀  Headroom proxy installer (macOS + Linux)
-├── config/                        Goose configuration
+├── config/                        Goose configuration (templated paths)
 │   ├── global-config.yaml         ~/.config/goose/config.yaml
 │   └── project-config.yaml        AnkiTov project config (goose_config.yaml)
 ├── custom_providers/              Custom LLM provider definitions
@@ -39,21 +54,21 @@ ankitov-goose/
 │   ├── gbrain-reminder.yaml
 │   └── topcoat-review.yaml
 ├── scheduled_recipes/             Cron-triggered recipe jobs
-│   ├── agent_created_*.yaml       13 scheduled tasks
+│   ├── agent_created_*.yaml       10 scheduled tasks
 │   └── goose-openclaw-alternatives.yaml
 ├── apps/                          Goose HTML apps
-│   ├── ankitov-management-console.html        (64 KB)
-│   ├── ankitov-management-console-v2.html     (189 KB)
-│   └── clock.html                             (7 KB)
+│   ├── ankitov-management-console.html
+│   ├── ankitov-management-console-v2.html
+│   └── clock.html
 ├── memory/global/                 Goose global memory store
-│   ├── ankiplayground.txt         AnkiPlayGround profiles runbook
-│   ├── goose-config.txt           Goose configuration reference
-│   ├── gui-rewire-v2.txt          Management Console evolution
-│   ├── i18n-system.txt            i18n architecture & translation gate
-│   ├── project-context.txt        Key file locations & architecture
-│   ├── project-documentation.txt  Documentation layers & mdBook
-│   ├── scheduled-tasks.txt        Pending & active scheduled tasks
-│   └── wasm-strategy.txt          WASM tactical extraction plan
+│   ├── ankiplayground.txt
+│   ├── goose-config.txt
+│   ├── gui-rewire-v2.txt
+│   ├── i18n-system.txt
+│   ├── project-context.txt
+│   ├── project-documentation.txt
+│   ├── scheduled-tasks.txt
+│   └── wasm-strategy.txt
 ├── schedule.json                   Scheduled job registry (templated)
 ├── projects.json                   Project tracking metadata (templated)
 └── .gitignore                      Session files, OS files, bak files
@@ -63,17 +78,18 @@ ankitov-goose/
 
 | What | Where | Managed By |
 |---|---|---|
-| **Global Goose config** | `~/.config/goose/config.yaml` | This repo |
+| **Global Goose config** | `~/.config/goose/config.yaml` | This repo (templated paths) |
 | **Custom providers** | `~/.config/goose/custom_providers/` | This repo |
 | **Global memory** | `~/.config/goose/memory/` | This repo |
 | **System recipes** | `~/.local/share/goose/recipes/` | This repo |
 | **Scheduled recipes** | `~/.local/share/goose/scheduled_recipes/` | This repo |
 | **Goose apps** | `~/.local/share/goose/apps/` | This repo |
-| **Job registry** | `~/.local/share/goose/schedule.json` | This repo |
+| **Job registry** | `~/.local/share/goose/schedule.json` | This repo (templated) |
 | **Project config** | `ankitov/goose_config.yaml` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
 | **AnkiTov slash commands** | `ankitov/recipes/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
 | **Summon subagents** | `ankitov/.goose/recipes/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
 | **Project memory** | `ankitov/.goose/memory/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
+| **Budget gate binary** | `ankitov/ankitov-budget-gate/target/release/` | Compiled locally (arch-specific) |
 
 ## Quick Start
 
@@ -90,7 +106,7 @@ ankitov-goose/
 git clone https://github.com/ankitov/ankitov.git
 git clone https://github.com/ankitov/ankitov-goose.git
 
-# 2. Bootstrap
+# 2. Bootstrap (auto-detects architecture)
 cd ankitov-goose
 chmod +x bootstrap.sh
 ./bootstrap.sh ~/ankitov
@@ -103,7 +119,10 @@ export GOOSE_TOOLSHIM=true
 export GOOSE_THINKING_EFFORT=off
 export GOOSE_TELEMETRY_ENABLED=false
 
-# 4. Verify and start
+# 4. If on Intel laptop, rebuild budget gate:
+cd ~/ankitov/ankitov-budget-gate && cargo build --release
+
+# 5. Verify and start
 cd ~/ankitov
 goose session -r
 ```
@@ -112,11 +131,14 @@ goose session -r
 
 The bootstrap script is idempotent — run it as many times as you like. It:
 
-1. **Symlinks** all Goose files from this repo into `~/.config/goose/` and `~/.local/share/goose/`
-2. **Substitutes paths** — resolves `{{GOOSE_HOME}}` and `{{ANKITOV_REPO}}` template variables in `schedule.json` and `projects.json` to your actual paths
-3. **Backs up** any existing files before overwriting (appends timestamp, e.g. `.bak.1712345678`)
-4. **Links AnkiTov project recipes** — connects slash commands, subrecipes, and summon subagents from the cloned AnkiTov repo
-5. **Verifies** — reports file counts for every linked directory
+1. **Auto-detects architecture** (ARM64 vs x86_64) and prints portability notes
+2. **Resolves headroom binary** via mise → PATH → common install locations
+3. **Resolves goose-sh path** for the GOOSE_SHELL config
+4. **Templates all config files** — substitutes `{{ANKITOV_REPO}}`, `{{HEADROOM_CMD}}`, `{{GOOSE_SHELL_CMD}}`, `{{GOOSE_HOME}}` with actual paths
+5. **Symlinks** all Goose files from this repo into `~/.config/goose/` and `~/.local/share/goose/`
+6. **Backs up** any existing files before overwriting (appends timestamp, e.g. `.bak.1712345678`)
+7. **Links AnkiTov project recipes** — connects slash commands, subrecipes, and summon subagents from the cloned AnkiTov repo
+8. **Verifies** — reports file counts for every linked directory
 
 ### Environment Variables
 
@@ -126,6 +148,42 @@ The bootstrap script is idempotent — run it as many times as you like. It:
 | `CUSTOM_AGNES_API_KEY` | Agnes AI provider key | Optional |
 | `GOOSE_MODE` | Operator mode (`smart_approve` recommended) | Recommended |
 | `GOOSE_TOOLSHIM` | Enable tool shim (set to `true`) | Recommended |
+
+## Architecture Portability
+
+This repo handles the following architecture-dependent concerns:
+
+### Templated Paths (resolved by bootstrap.sh)
+- `{{ANKITOV_REPO}}` — path to AnkiTov source repo
+- `{{HEADROOM_CMD}}` — path to headroom binary (searched: mise → PATH → common install dirs)
+- `{{GOOSE_SHELL_CMD}}` — path to goose-sh wrapper
+- `{{GOOSE_HOME}}` — `~/.local/share/goose`
+
+### Items requiring manual setup per machine
+- **Budget gate binary**: Must be compiled natively (`cargo build --release`)
+- **Anki.app**: Download architecture-specific version from ankiweb.net
+- **Rust target**: Already handled by rustup's auto-detection
+- **Goose binary**: Installed via brew (architecture-appropriate)
+
+### Items NOT in this repo (machine-specific)
+- **Session database** (`sessions.db`) — too large, machine-specific
+- **Goose binary** — install via `brew` or `cargo`
+- **Budget gate binary** — compiled from the AnkiTov repo
+- **API keys** — set via environment variables only
+- **backend/.env** — lives in AnkiTov repo, has machine-specific paths
+
+## Path Templating
+
+All config files in this repo use template variables that `bootstrap.sh` resolves at install time:
+
+| Template | Resolved to |
+|----------|-------------|
+| `{{ANKITOV_REPO}}` | Absolute path to cloned AnkiTov repo |
+| `{{HEADROOM_CMD}}` | Full path to headroom binary |
+| `{{GOOSE_SHELL_CMD}}` | Full path to goose-sh |
+| `{{GOOSE_HOME}}` | `~/.local/share/goose` |
+
+This keeps the repo portable across machines and directory layouts.
 
 ## Design Decisions
 
@@ -141,14 +199,10 @@ The bootstrap script is idempotent — run it as many times as you like. It:
 - **Session data** (`sessions.db`) — too large, machine-specific, and transient
 - **Goose binary** — install via `brew` or `cargo`
 - **AnkiTov source code** — cloned separately
-- **Budget gate binary** — compiled from the AnkiTov repo
+- **Budget gate binary** — compiled from the AnkiTov repo (arch-specific)
 - **API keys** — set via environment variables only
-
-### Path templating
-
-The `schedule.json` and `projects.json` use `{{GOOSE_HOME}}` and `{{ANKITOV_REPO}}` template variables that `bootstrap.sh` substitutes at install time. This keeps the repo portable across machines and directory layouts.
+- **backend/.env** — machine-specific paths (AnkiTov repo)
 
 ## License
 
 MIT — use freely, adapt as needed.
->>>>>>> 28086cb (Initial commit: AnkiTov Goose environment)

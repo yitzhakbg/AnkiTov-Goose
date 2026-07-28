@@ -1,11 +1,11 @@
 active_provider: openrouter
 slash_commands:
   - command: "research_codebase"
-    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-research.yaml"
+    recipe_path: "{{ANKITOV_REPO}}/recipes/ankitov-research.yaml"
   - command: "design_discussion"
-    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-design.yaml"
+    recipe_path: "{{ANKITOV_REPO}}/recipes/ankitov-design.yaml"
   - command: "create_plan"
-    recipe_path: "/Volumes/YBG1TB4Mac/AnkiTov/recipes/ankitov-plan.yaml"
+    recipe_path: "{{ANKITOV_REPO}}/recipes/ankitov-plan.yaml"
 providers:
   custom_deepseek:
     enabled: true
@@ -163,18 +163,44 @@ extensions:
     timeout: 300
     bundled: true
     available_tools: []
+  # AST Code Graph (tree-sitter based, MCP-native)
+  code-graph:
+    enabled: true
+    type: stdio
+    name: Code Graph
+    cmd: "code-graph-mcp"
+    args: ["serve"]
+    timeout: 900
+
+  # Knowledge Graph Memory (official MCP server)
+  memory-graph:
+    enabled: true
+    type: stdio
+    name: Knowledge Graph Memory
+    cmd: "npx"
+    args: ["-y", "@modelcontextprotocol/server-memory"]
+    env:
+      MEMORY_FILE_PATH: "{{ANKITOV_REPO}}/.goose/memory-graph/memory.jsonl"
+    timeout: 600
+
   # External High-Performance Context Connections
   headroom-mcp:
     enabled: true
     type: stdio
     name: Headroom MCP
-    cmd: "/Users/ybg/.local/share/mise/installs/python/3.12/bin/headroom"
+    # ARCHITECTURE NOTE: On this machine, headroom is installed via mise at
+    # ~/.local/share/mise/installs/python/3.12/bin/headroom.
+    # On a different machine, use `which headroom` or set HEADROOM_CMD env var.
+    # bootstrap.sh will attempt to resolve the correct path.
+    cmd: "{{HEADROOM_CMD}}"
     args: ["mcp", "serve", "--proxy-url", "http://127.0.0.1:8787"]
     timeout: 900
   ankitov-context-server:
     enabled: true
     type: stdio
     name: AnkiTov Context Engine
-    cmd: "/Volumes/YBG1TB4Mac/AnkiTov/ankitov-budget-gate/target/release/ankitov-budget-gate"
+    # ARCHITECTURE NOTE: This binary is compiled for the current architecture.
+    # On Intel Mac, rebuild via: cd {{ANKITOV_REPO}}/ankitov-budget-gate && cargo build --release
+    cmd: "{{ANKITOV_REPO}}/ankitov-budget-gate/target/release/ankitov-budget-gate"
     args: []
     timeout: 600
