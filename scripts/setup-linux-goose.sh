@@ -116,8 +116,9 @@ fi
 echo ""
 echo "-- Step 9/13: Mutagen --"
 if ! command -v mutagen &>/dev/null; then
-  curl -fsSL https://mutagen.io/install.sh | bash
-  log "Mutagen installed"
+  MUTAGEN_VER="0.18.1"
+  curl -fsSL "https://github.com/mutagen-io/mutagen/releases/download/v${MUTAGEN_VER}/mutagen_linux_amd64_v${MUTAGEN_VER}.tar.gz" | tar xz -C "${HOME}/.local/bin"
+  log "Mutagen ${MUTAGEN_VER} installed"
 else
   log "Mutagen already installed: $(mutagen version)"
 fi
