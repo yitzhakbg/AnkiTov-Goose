@@ -68,7 +68,7 @@ fi
 echo ""
 echo "-- Step 5/9: TaskLite --"
 if ! command -v tasklite &>/dev/null; then
-  cargo install tasklite
+  cargo install todo-sqlite-cli
   log "TaskLite installed"
 else
   log "TaskLite already installed: $(tasklite --version)"
