@@ -89,6 +89,10 @@ fi
 echo ""
 echo "-- Step 7/13: code-graph-mcp --"
 if ! command -v code-graph-mcp &>/dev/null; then
+  # Avoid EACCES on global installs by using user-local prefix
+  mkdir -p "${HOME}/.local"
+  npm config set prefix "${HOME}/.local" 2>/dev/null || true
+  export PATH="${HOME}/.local/bin:${PATH}"
   npm install -g code-graph-mcp
   log "code-graph-mcp installed"
 else
