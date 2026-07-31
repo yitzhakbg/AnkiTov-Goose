@@ -107,30 +107,43 @@ fi
 
 # ── 9. Clone AnkiTov repo ──────────────────────────────
 echo ""
-echo "-- Step 9/9: Clone AnkiTov --"
-REPO_PATH="${HOME}/AnkiTov"
-if [ ! -d "$REPO_PATH" ]; then
-  jj git clone https://github.com/yitzhakbg/AnkiTov.git "$REPO_PATH"
-  log "Repo cloned to $REPO_PATH"
+echo "-- Step 9/12: Clone AnkiTov --"
+ANKITOV_PATH="${HOME}/AnkiTov"
+if [ ! -d "$ANKITOV_PATH" ]; then
+  jj git clone https://github.com/yitzhakbg/AnkiTov.git "$ANKITOV_PATH"
+  log "AnkiTov cloned to $ANKITOV_PATH"
 else
-  warn "Repo already exists at $REPO_PATH -- skipping clone"
-  warn "Run: cd $REPO_PATH && jj git fetch"
+  warn "AnkiTov already exists at $ANKITOV_PATH -- skipping"
+  warn "Run: cd $ANKITOV_PATH && jj git fetch"
 fi
 
-# ── Path Patching ──────────────────────────────────────
+# ── 10. Clone AnkiTov-Goose repo ───────────────────────
 echo ""
-echo "-- Patching config paths for Linux --"
-CONFIG="$REPO_PATH/goose_config.yaml"
-if [ -f "$CONFIG" ]; then
-  sed -i 's|/Volumes/YBG1TB4Mac/AnkiTov|'${HOME}'/AnkiTov|g' "$CONFIG"
-  sed -i 's|/Users/ybg/|'${HOME}'/|g' "$CONFIG"
-  log "Config paths patched"
+echo "-- Step 10/12: Clone AnkiTov-Goose --"
+GOOSE_PATH="${HOME}/AnkiTov-goose"
+if [ ! -d "$GOOSE_PATH" ]; then
+  git clone https://github.com/yitzhakbg/AnkiTov-Goose.git "$GOOSE_PATH"
+  log "AnkiTov-Goose cloned to $GOOSE_PATH"
+else
+  warn "AnkiTov-Goose already exists at $GOOSE_PATH -- skipping"
+  warn "Run: cd $GOOSE_PATH && git pull"
 fi
 
-# ── Compile budget gate ────────────────────────────────
+# ── 11. Run bootstrap.sh (symlinks + config rendering) ──
 echo ""
-echo "-- Compiling budget gate (x86_64) --"
-cd "$REPO_PATH/ankitov-budget-gate"
+echo "-- Step 11/12: Bootstrap Goose symlinks --"
+if [ -f "$GOOSE_PATH/bootstrap.sh" ]; then
+  bash "$GOOSE_PATH/bootstrap.sh" "$ANKITOV_PATH"
+  log "Goose environment linked — agents, skills, recipes, hints, configs"
+else
+  warn "bootstrap.sh not found in $GOOSE_PATH — skipping"
+  warn "Run manually: bash ~/AnkiTov-goose/bootstrap.sh ~/AnkiTov"
+fi
+
+# ── 12. Compile budget gate ────────────────────────────
+echo ""
+echo "-- Step 12/12: Compile budget gate (x86_64) --"
+cd "$ANKITOV_PATH/ankitov-budget-gate"
 cargo build --release
 log "Budget gate compiled for x86_64-unknown-linux-gnu"
 
@@ -138,10 +151,17 @@ echo ""
 echo "================================================="
 echo "  Bootstrap complete!"
 echo ""
-echo "  Next steps on the laptop:"
-echo "  1. cd ~/AnkiTov"
-echo "  2. cargo check   (verify backend compiles)"
-echo "  3. goose session (test Goose connectivity)"
+echo "  What was set up:"
+echo "    • Toolchain: Goose, jj, Rust, mise, tasklite,"
+echo "      code-graph-mcp, headroom, mutagen"
+echo "    • Repos:    ~/AnkiTov (product) + ~/AnkiTov-goose (Goose config)"
+echo "    • Symlinks: agents, skills, recipes, hints, ignore, configs"
+echo "      all point → ~/AnkiTov-goose/"
 echo ""
-echo "  Then come back to Mac Mini for Mutagen sync."
+echo "  Next steps:"
+echo "    cd ~/AnkiTov && goose session"
+echo ""
+echo "  Ongoing sync (either machine):"
+echo "    cd ~/AnkiTov-goose && git pull   # symlinks auto-resolve"
+echo "    cd ~/AnkiTov && jj git fetch      # backend updates"
 echo "================================================="
