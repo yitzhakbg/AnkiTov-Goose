@@ -1,0 +1,44 @@
+version: "1.0.0"
+title: "AnkiTov Design Discussion"
+description: >
+  Bridge between research and planning. Agent dumps its understanding in
+  ~200 lines; human performs "brain surgery" to correct architectural
+  direction before any planning begins. Outputs to specs/design/.
+  This is step 2 of the AnkiTov RPI workflow.
+
+instructions: |
+  Read the research doc fully. Then write a design discussion document.
+
+  Your document is a brain dump — your current understanding of what to build
+  and how. The human will review it and redirect you before planning starts.
+
+  Cover these sections (aim for ~200 lines total):
+  1. **Current State** — what exists now, based on research
+  2. **Proposed Approach** — how you'd build it and why
+  3. **Patterns to Follow** — specific AnkiTov conventions you'd use (utoipa, SeaORM, Loco.rs, NoOpMigrator)
+  4. **Open Design Questions** — decisions you can't make without human input
+
+  Do NOT write a plan. Do NOT write code. You are aligning understanding.
+
+  Write to `specs/design/YYYY-MM-DD-HHmm-<topic>.md`.
+
+  Ask the human to review before proceeding to `/create_plan`.
+
+parameters:
+  - key: research_doc
+    input_type: string
+    requirement: user_prompt
+    description: "Path to research doc from /research_codebase"
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+
+prompt: |
+  Read this research doc fully and write a design discussion document:
+  {{ research_doc }}
+
+  Brain dump your understanding in ~200 lines. The human will review and
+  redirect before planning starts. Do NOT plan. Do NOT write code.

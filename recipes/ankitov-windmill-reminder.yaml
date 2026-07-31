@@ -1,0 +1,43 @@
+version: "1.0.0"
+title: "Windmill Integration + Rclone Sync Setup"
+description: "Scheduled reminder for Aug 16: Windmill agent definition, recipe, Gotchas, workspace setup, rclone install on both machines, remotes, backup flows, end-to-end test."
+instructions: |
+  Today is the scheduled Windmill + rclone integration day.
+
+  ## Scope (from TaskLite #42)
+
+  1. Windmill agent definition: Create .goose/agents/ankitov-windmill.md
+     - Knows wmill CLI patterns
+     - When to use Windmill vs Loco.rs
+     - Secrets management, GUI URL patterns
+     - "Appraisal before execution" — states plan, requests approval, points to Windmill GUI
+
+  2. Windmill recipe: Create recipes/ankitov-windmill-deploy.yaml
+     - /deploy_script, /create_flow, /schedule slash commands
+     - Uses goose schedule under the hood for Windmill cron flows
+
+  3. Windmill Gotchas: Add entries to workspace/Gotchas.md
+     - sync push overwrites, sandbox dependencies, secret pre-creation, approval timeouts
+
+  4. Windmill workspace: Set up AnkiTov workspace in Windmill GUI
+
+  5. Rclone: Install on Mac Mini + Linux laptop (ybgxps)
+     - Configure remotes (local filesystem, cloud backend)
+     - Test basic copy/sync operations
+
+  6. Wire rclone into Windmill: Create Windmill flow for scheduled backup/sync
+     - Uses rclone under the hood via wmill CLI
+     - Scheduled via goose schedule → Windmill cron
+
+  7. End-to-end test: Create flow → Push to Windmill → Verify in GUI → Trigger run → Check output
+
+  ## Pre-flight (check these first)
+  - TaskLite #43 (prep checklist) should be done by now
+  - wmill CLI accessible from both machines
+  - Windmill workspace exists
+  - rclone binary available on both machines
+
+  Report status of each item with checkboxes as you go.
+prompt: "Execute the Windmill + rclone integration scope from TaskLite #42. Pre-flight checklist (TaskLite #43) should be complete. Walk through all 8 items and mark progress."
+settings:
+  max_turns: 40

@@ -1,0 +1,58 @@
+version: "1.0.0"
+title: "AnkiTov Create Plan"
+description: >
+  Create an execution-level plan from research and design docs.
+  Outputs to specs/plans/. Step 3 of the AnkiTov RPI workflow.
+
+instructions: |
+  Plan the implementation. Do NOT implement. Use `jj` not `git`.
+  Build commands: `cd backend && cargo check`, `cargo nextest run`.
+
+  1. Read the research doc AND design discussion doc fully. These constrain the plan.
+  2. Spawn subrecipes only if the docs have gaps.
+  3. Ask clarifying questions you can't answer from the docs.
+  4. Propose phase structure. Get feedback before writing details.
+  5. Write `specs/plans/YYYY-MM-DD-HHmm-<description>.md` using `specs/templates/plan-template.md`.
+
+  Each phase MUST be a vertical slice: end-to-end path (model + controller + test +
+  utoipa annotation) that is independently verifiable with `cargo check` + `cargo nextest run`.
+  Horizontal phases (e.g., "all models first") are NOT allowed.
+
+  The plan must include: exact file paths, code snippets, checkboxes for every
+  verification item, "What We're NOT Doing" section.
+
+parameters:
+  - key: context
+    input_type: string
+    requirement: optional
+    default: ""
+    description: "Path to design discussion doc (preferred) or research doc"
+
+sub_recipes:
+  - name: "find_files"
+    path: "./subrecipes/ankitov-locator.yaml"
+  - name: "analyze_code"
+    path: "./subrecipes/ankitov-analyzer.yaml"
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+  - type: builtin
+    name: analyze
+    timeout: 300
+    bundled: true
+
+prompt: |
+  {% if context %}
+  Read this fully and create an implementation plan: {{ context }}
+  Prefer a design discussion doc from specs/design/. If only a research doc is
+  provided, read it and ask whether a design discussion was done first.
+  {% else %}
+  Provide the path to a design discussion doc (from /design_discussion) or
+  research doc (from /research_codebase).
+  {% endif %}
+
+  Each plan phase must be a vertical slice — end-to-end and independently testable.
+  Do NOT create horizontal phases like "all models first."

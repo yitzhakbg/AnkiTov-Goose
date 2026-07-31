@@ -1,0 +1,76 @@
+# AnkiTov — Operational Quick Reference
+
+## Coding Standards
+- **Rust:** Idiomatic Rust 2021. `#[utoipa::path]` planned but not yet on management controllers.
+- **Python:** Type-hinted, no bare excepts.
+- **Shell:** Always `bash` (never zsh). `set -euo pipefail` in scripts.
+- **No gRPC** — all inter-service comms are native (stdio, HTTP, MCP stdio).
+- **VCS:** Use `jj` for all commits. Atomic commits, descriptive messages. No `git` unless explicit.
+- **Schema changes:** `NoOpMigrator` pattern — must be reversible.
+
+## Build & Test
+- Check: `cd backend && cargo check`
+- Test: `cargo nextest run` (NOT `cargo test`)
+- Budget Gate: `cd ankitov-budget-gate && cargo check`
+- Self-correct compilation failures up to 3 iterations before asking operator.
+
+## Model Routing
+- Prefer cheapest capable model for heavy code-gen (DeepSeek v4 Flash).
+- Difficult Rust tasks → manually select stronger model in GUI.
+- No automatic cost-aware routing through Headroom proxy — manual model selection is the only reliable approach.
+
+## Task Decomposition
+For complex tasks, structured phases with explicit validation gates:
+1. **ANALYSIS** — Map dependencies, identify breaking changes, present findings
+2. **TEST COVERAGE** — Add tests for existing behavior before changes
+3. **IMPLEMENTATION** — Apply changes, verify via `cargo check` + `cargo nextest`
+4. **VALIDATION** — Run full suite, present delta summary
+
+## Context Management
+- Use `codegraph` (code-graph-mcp) or `analyze` extension for unfamiliar code navigation — not raw `cat`/`grep`.
+- For large-scale refactors, delegate parallel sub-tasks to subagents via `delegate`.
+
+## Context Hygiene
+- **Rewind > correct** — If a fix fails, revert to before the attempt. Do NOT leave
+  failed code + corrections in context; it degrades subsequent reasoning.
+- **Fresh sessions per phase** — Per RDPI: implement each phase in a new session.
+  Context rot sets in above 40% utilization. If past 60%, start fresh.
+- **Subagent isolation** — Delegate large read-only explorations to subagents via
+  `delegate`. Their 20 file reads + 12 greps + 3 dead ends stay in child context;
+  only the final report returns.
+- **Commit after each meaningful change** — At least once per hour. Atomic jj commits
+  with descriptive messages.
+
+## Model Dispatch
+- **Exploration/Research** → cheapest capable model (DeepSeek v4 Flash).
+- **Implementation (Rust)** → stronger model (Qwen Coder 235B or manual selection).
+- **Code review** → cheapest capable (review is pattern matching, not code-gen).
+- **Planning/Design** → mid-tier model for reasoning quality.
+
+## Path Conventions
+- Backend: `backend/src/` (controllers, models, services, server, app.rs, lib.rs, main.rs)
+- Budget gate: `ankitov-budget-gate/src/`
+- Specs: `specs/` (research, design, plans, templates)
+- Workspace docs: `workspace/`
+- Recipes: `recipes/`
+- IMP Console: `backend/resources/dashboard/imp-console.html` (compiled into binary via `include_str!`)
+
+## RDPI Workflow (Spec-Driven Development)
+1. `/research_codebase "topic"` → parallel subagents → `specs/research/<date>-<topic>.md`
+2. `/design_discussion specs/research/<file>.md` → brain dump ~200 lines → you correct → `specs/design/<date>-<topic>.md`
+3. `/create_plan specs/design/<file>.md` → vertical-slice phases → `specs/plans/<date>-<topic>.md`
+4. **Implement** — Fresh session. "Read specs/plans/<file>.md, implement Phase N."
+Each phase is a separate session per the 40% context rule.
+
+## i18n
+- Backend: `backend/i18n/{code}/main.ftl` (Fluent, compiled into binary)
+- Frontend: `backend/resources/dashboard/locales/{code}.json` (compiled via include_str!)
+- After editing locale files: `cargo clean -p backend` then rebuild.
+- Validate: `python3 tools/validate_i18n.py`
+
+## Reference Documents (auto-loaded)
+@workspace/Strategic_Blueprint.md
+@workspace/Launch_Runbook.md
+@workspace/Tooling_AnkiTov.md
+@project-knowledge/SUMMARY.md
+@workspace/RDPI_Workflow.md

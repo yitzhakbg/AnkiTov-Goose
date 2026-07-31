@@ -1,0 +1,109 @@
+# AnkiTov Simplify — Post-Implementation Cleanup
+#
+# Runs 4 parallel subagents reviewing changed code for different concerns:
+# 1. Simplification — can this be simpler?
+# 2. Performance — any bottlenecks?
+# 3. Reuse — duplicated code that should be extracted?
+# 4. Abstraction — appropriate level of abstraction?
+#
+# Usage: /simplify — reviews current jj diff
+#
+# Based on Claude Code's bundled `simplify` skill pattern (4 parallel review agents).
+
+name: simplify
+description: Review current changes for cleanup — simplification, performance, reuse, abstraction
+provider: openrouter
+
+# Phase 1: Identify what changed
+steps:
+  - id: scope
+    type: shell
+    command: "jj diff --stat 2>&1 | head -40"
+    description: "Identify changed files"
+
+  - id: diff
+    type: shell
+    command: "jj diff 2>&1"
+    description: "Get full diff for analysis"
+
+# Phase 2: 4 parallel review agents — each focuses on ONE concern
+  - id: simplify-agent
+    type: delegate
+    async: true
+    source: agent
+    description: "Review for simplification opportunities"
+    instructions: |
+      Review the diff below for SIMPLIFICATION ONLY. Ignore performance,
+      reuse, and abstraction.
+      
+      Look for:
+      - Unnecessary complexity
+      - Overly clever code that could be plainer
+      - Code that does in 10 lines what could be done in 3
+      - Unnecessary nesting or indirection
+      
+      Output: List of simplification opportunities with file:line and severity (🔴🟡💭).
+      If nothing to simplify, say "No simplification issues found."
+
+  - id: perf-agent
+    type: delegate
+    async: true
+    source: agent
+    description: "Review for performance issues"
+    instructions: |
+      Review the diff below for PERFORMANCE ONLY. Ignore simplification,
+      reuse, and abstraction.
+      
+      Look for:
+      - N+1 queries or unnecessary database calls
+      - Unnecessary allocations or clones in Rust
+      - Blocking operations that should be async
+      - Missing indexes or inefficient queries
+      
+      Output: List of performance issues with file:line and severity (🔴🟡💭).
+      If no performance issues, say "No performance issues found."
+
+  - id: reuse-agent
+    type: delegate
+    async: true
+    source: agent
+    description: "Review for code reuse opportunities"
+    instructions: |
+      Review the diff below for REUSE/DEDUP ONLY. Ignore simplification,
+      performance, and abstraction.
+      
+      Look for:
+      - Code duplicated within the diff
+      - Code that duplicates existing patterns in the codebase
+      - Opportunities to extract shared helpers
+      
+      Wait until the FOURTH occurrence before suggesting extraction.
+      Three similar lines is fine.
+      
+      Output: List of reuse opportunities with file:line and severity (🔴🟡💭).
+      If nothing to dedup, say "No reuse issues found."
+
+  - id: abstraction-agent
+    type: delegate
+    async: true
+    source: agent
+    description: "Review for abstraction level"
+    instructions: |
+      Review the diff below for ABSTRACTION LEVEL ONLY. Ignore simplification,
+      performance, and reuse.
+      
+      Look for:
+      - Too high abstraction (over-engineered, premature generalization)
+      - Too low abstraction (implementation details leaking, no encapsulation)
+      - Missing trait boundaries where they'd clarify intent
+      - Unnecessary traits or generics that don't serve real use cases
+      
+      Output: List of abstraction issues with file:line and severity (🔴🟡💭).
+      If abstraction level is appropriate, say "No abstraction issues found."
+
+# Phase 3: Collect results
+  - id: collect
+    type: shell
+    depends_on: [simplify-agent, perf-agent, reuse-agent, abstraction-agent]
+    command: "echo 'All review agents completed.'"
+    description: "Wait for all parallel agents"

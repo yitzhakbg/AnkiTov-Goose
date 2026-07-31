@@ -1,0 +1,12 @@
+target/
+node_modules/
+.git/
+.jj/
+*.sqlite*
+.deploy/
+AnkiPlayGround/
+backend/data/
+*.anki2
+*.apkg
+*.ankiaddon
+goose-archive/

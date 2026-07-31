@@ -1,0 +1,48 @@
+version: "1.0.0"
+title: "AnkiTov Research Codebase"
+description: >
+  Research and document the AnkiTov codebase using parallel sub-agents.
+  Outputs to specs/research/. Step 1 of the AnkiTov RPI workflow.
+
+instructions: |
+  Document the codebase as it exists today. Do NOT suggest changes.
+  Use `jj` not `git`. Write to `specs/research/`.
+
+  1. Read any mentioned files fully.
+  2. Decompose the topic into 3-5 research areas.
+  3. Spawn parallel subrecipes: find_files, analyze_code, find_patterns.
+  4. Wait for all results, synthesize.
+  5. Run `date -Iseconds` and `jj log --limit 1`.
+  6. Write `specs/research/YYYY-MM-DD-HHmm-<topic>.md` with: research question, summary, detailed findings (file:line refs), patterns observed, open questions.
+  7. Present summary. Ask if they have follow-up questions.
+
+parameters:
+  - key: topic
+    input_type: string
+    requirement: user_prompt
+    description: "What to research in the codebase"
+
+sub_recipes:
+  - name: "find_files"
+    path: "./subrecipes/ankitov-locator.yaml"
+  - name: "analyze_code"
+    path: "./subrecipes/ankitov-analyzer.yaml"
+  - name: "find_patterns"
+    path: "./subrecipes/ankitov-pattern-finder.yaml"
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+  - type: builtin
+    name: analyze
+    timeout: 300
+    bundled: true
+
+prompt: |
+  Research topic: {{ topic }}
+
+  Spawn 3 parallel subrecipes (find_files, analyze_code, find_patterns).
+  Synthesize results, gather jj metadata, write to specs/research/.
+  Present summary. Do NOT suggest changes — document what IS.
