@@ -239,34 +239,24 @@ for f in "$GOOSE_REPO/apps"/*.html; do
 done
 
 # ------------------------------------------------------------------
-# 8. AnkiTov project-level recipes (slash commands + subrecipes)
+# 8. AnkiTov project recipes → symlinked INTO AnkiTov repo
 # ------------------------------------------------------------------
 echo ""
 echo "─── 8. AnkiTov Project Recipes ───"
-
-# Slash command recipes (ankitov-research, ankitov-design, ankitov-plan)
-ANKITOV_RECIPES_DIR="$ANKITOV_REPO/recipes"
-if [ -d "$ANKITOV_RECIPES_DIR" ]; then
-  for f in "$ANKITOV_RECIPES_DIR"/*.yaml; do
+# Source: AnkiTov-Goose/recipes/ → Target: $ANKITOV_REPO/recipes/
+# Goose auto-discovers project recipes from the project directory,
+# and slash commands reference them via recipe_path in goose_config.yaml.
+mkdir -p "$ANKITOV_REPO/recipes"
+for f in "$GOOSE_REPO/recipes"/*.yaml; do
+  [ -f "$f" ] || continue
+  link "$f" "$ANKITOV_REPO/recipes/$(basename "$f")" "project recipe "
+done
+# Subrecipes (if any)
+if [ -d "$GOOSE_REPO/recipes/subrecipes" ]; then
+  mkdir -p "$ANKITOV_REPO/recipes/subrecipes"
+  for f in "$GOOSE_REPO/recipes/subrecipes"/*.yaml; do
     [ -f "$f" ] || continue
-    link "$f" "$GOOSE_HOME/recipes/$(basename "$f")"
-  done
-  # Subrecipes (ankitov-analyzer, ankitov-locator, ankitov-pattern-finder)
-  if [ -d "$ANKITOV_RECIPES_DIR/subrecipes" ]; then
-    mkdir -p "$GOOSE_HOME/recipes/subrecipes"
-    for f in "$ANKITOV_RECIPES_DIR/subrecipes"/*.yaml; do
-      [ -f "$f" ] || continue
-      link "$f" "$GOOSE_HOME/recipes/subrecipes/$(basename "$f")"
-    done
-  fi
-fi
-
-# Summon subagents (ankitov-spec-generator, entroly-review, update-playground-profiles)
-ANKITOV_GOOSE_RECIPES="$ANKITOV_REPO/.goose/recipes"
-if [ -d "$ANKITOV_GOOSE_RECIPES" ]; then
-  for f in "$ANKITOV_GOOSE_RECIPES"/*.yaml; do
-    [ -f "$f" ] || continue
-    link "$f" "$GOOSE_HOME/recipes/$(basename "$f")"
+    link "$f" "$ANKITOV_REPO/recipes/subrecipes/$(basename "$f")" "subrecipe "
   done
 fi
 
@@ -283,32 +273,108 @@ if [ -f "$GOOSE_REPO/scripts/deploy-headroom.sh" ]; then
 fi
 
 # ------------------------------------------------------------------
-# 10. AnkiTov project config notice
+# 10. AnkiTov project config (templated → rendered into AnkiTov repo)
 # ------------------------------------------------------------------
 echo ""
 echo "─── 10. AnkiTov Project Config ───"
-echo "  ℹ️  Project config at: $ANKITOV_REPO/goose_config.yaml"
-echo "  ℹ️  Goose auto-detects it when cd'd into the AnkiTov directory."
+template_and_link "$GOOSE_REPO/config/project-config.yaml" \
+                   "$ANKITOV_REPO/goose_config.yaml" \
+                   "project config "
+
+# ------------------------------------------------------------------
+# 11. AnkiTov agents (.goose/agents/)
+# ------------------------------------------------------------------
+echo ""
+echo "─── 11. AnkiTov Agents ───"
+if [ -d "$GOOSE_REPO/agents" ]; then
+  for f in "$GOOSE_REPO/agents"/*.md; do
+    [ -f "$f" ] || continue
+    link "$f" "$ANKITOV_REPO/.goose/agents/$(basename "$f")" "agent "
+  done
+else
+  echo "  ℹ️  No agents directory — skipping"
+fi
+
+# ------------------------------------------------------------------
+# 12. AnkiTov skills (.agents/skills/)
+# ------------------------------------------------------------------
+echo ""
+echo "─── 12. AnkiTov Skills ───"
+if [ -d "$GOOSE_REPO/skills" ]; then
+  # Symlink the entire skills tree (code-review/, etc.)
+  for dir in "$GOOSE_REPO/skills"/*/; do
+    [ -d "$dir" ] || continue
+    skill_name=$(basename "$dir")
+    mkdir -p "$ANKITOV_REPO/.agents/skills/$skill_name"
+    for f in "$dir"*; do
+      [ -f "$f" ] || continue
+      link "$f" "$ANKITOV_REPO/.agents/skills/$skill_name/$(basename "$f")" "skill "
+    done
+  done
+else
+  echo "  ℹ️  No skills directory — skipping"
+fi
+
+# ------------------------------------------------------------------
+# 13. AnkiTov hints (.goosehints)
+# ------------------------------------------------------------------
+echo ""
+echo "─── 13. AnkiTov Hints ───"
+if [ -f "$GOOSE_REPO/config/goosehints.template" ]; then
+  link "$GOOSE_REPO/config/goosehints.template" \
+       "$ANKITOV_REPO/.goosehints" \
+       "hints "
+else
+  echo "  ℹ️  No hints template — skipping"
+fi
+
+# ------------------------------------------------------------------
+# 14. AnkiTov ignore (.gooseignore)
+# ------------------------------------------------------------------
+echo ""
+echo "─── 14. AnkiTov Ignore ───"
+if [ -f "$GOOSE_REPO/config/gooseignore.template" ]; then
+  link "$GOOSE_REPO/config/gooseignore.template" \
+       "$ANKITOV_REPO/.gooseignore" \
+       "ignore "
+else
+  echo "  ℹ️  No ignore template — skipping"
+fi
 
 # ------------------------------------------------------------------
 # Architecture-specific notes
 # ------------------------------------------------------------------
 echo ""
 echo "─── Architecture Portability Notes ───"
+
+# Detect OS
+OS="$(uname -s)"
+case "$OS" in
+  Darwin)  OS_LABEL="macOS" ;;
+  Linux)   OS_LABEL="Linux" ;;
+  *)       OS_LABEL="$OS" ;;
+esac
+
 if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-  echo "  ✅ Running on ARM64 (Apple Silicon)"
-  echo "  ℹ️  If you need to run on Intel (x86_64) later:"
-  echo "     1. Install Rust x86_64 target: rustup target add x86_64-apple-darwin"
-  echo "     2. Install Intel Goose: brew install goose  (homebrew auto-detects arch)"
+  echo "  ✅ $OS_LABEL on ARM64 (Apple Silicon)"
+  echo "  ℹ️  If deploying to Intel Linux (Pop!_OS):"
+  echo "     1. Install Rust x86_64 target: rustup target add x86_64-unknown-linux-gnu"
+  echo "     2. Install Goose: curl -fsSL https://goose.ai/install.sh | bash"
   echo "     3. Rebuild budget gate: cd $ANKITOV_REPO/ankitov-budget-gate && cargo build --release"
-  echo "     4. Download Intel Anki from https://apps.ankiweb.net"
-else
-  echo "  ✅ Running on x86_64 (Intel)"
-  echo "  ℹ️  Architecture-specific actions taken:"
+elif [ "$ARCH" = "x86_64" ]; then
+  echo "  ✅ $OS_LABEL on x86_64 (Intel)"
+  echo "  ℹ️  Architecture-specific actions:"
   echo "     - Headroom binary resolved to: $HEADROOM_CMD"
   echo "     - Budget gate may need rebuild: cd $ANKITOV_REPO/ankitov-budget-gate && cargo build --release"
+else
+  echo "  ℹ️  Unknown architecture: $ARCH"
 fi
-echo "  ℹ️  Homebrew prefix: $(brew --prefix 2>/dev/null || echo 'not found')"
+
+if [ "$OS" = "Darwin" ]; then
+  echo "  ℹ️  Homebrew prefix: $(brew --prefix 2>/dev/null || echo 'not found')"
+elif [ "$OS" = "Linux" ]; then
+  echo "  ℹ️  Package manager: $(which apt 2>/dev/null && echo 'apt' || which dnf 2>/dev/null && echo 'dnf' || echo 'unknown')"
+fi
 
 # ------------------------------------------------------------------
 # Verify
@@ -316,12 +382,16 @@ echo "  ℹ️  Homebrew prefix: $(brew --prefix 2>/dev/null || echo 'not found'
 echo ""
 echo "─── Verification ───"
 echo ""
-echo "  Config: $(readlink "$CONFIG_HOME/config.yaml" 2>/dev/null || echo 'NOT LINKED')"
-echo "  Memory: $(ls "$CONFIG_HOME/memory/" 2>/dev/null | wc -l | tr -d ' ') files"
-echo "  Recipes: $(ls "$GOOSE_HOME/recipes/"*.yaml 2>/dev/null | wc -l | tr -d ' ') files"
-echo "  Scheduled: $(ls "$GOOSE_HOME/scheduled_recipes/"*.yaml 2>/dev/null | wc -l | tr -d ' ') files"
-echo "  Apps: $(ls "$GOOSE_HOME/apps/"*.html 2>/dev/null | wc -l | tr -d ' ') files"
-echo "  AnkiTov config: $(readlink -f "$ANKITOV_REPO/goose_config.yaml" 2>/dev/null || echo 'present')"
+echo "  Global config:   $(readlink "$CONFIG_HOME/config.yaml" 2>/dev/null || echo 'NOT LINKED')"
+echo "  Project config:  $(readlink "$ANKITOV_REPO/goose_config.yaml" 2>/dev/null || echo 'NOT LINKED')"
+echo "  Memory:          $(ls "$CONFIG_HOME/memory/" 2>/dev/null | wc -l | tr -d ' ') files"
+echo "  Recipes:         $(ls "$ANKITOV_REPO/recipes/"*.yaml 2>/dev/null | wc -l | tr -d ' ') project | $(ls "$GOOSE_HOME/recipes/"*.yaml 2>/dev/null | wc -l | tr -d ' ') global"
+echo "  Scheduled:       $(ls "$GOOSE_HOME/scheduled_recipes/"*.yaml 2>/dev/null | wc -l | tr -d ' ') files"
+echo "  Agents:          $(ls "$ANKITOV_REPO/.goose/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') files"
+echo "  Skills:          $(find "$ANKITOV_REPO/.agents/skills/" -name 'SKILL.md' 2>/dev/null | wc -l | tr -d ' ') files"
+echo "  Hints:           $([ -L "$ANKITOV_REPO/.goosehints" ] && echo 'LINKED' || echo 'NOT LINKED')"
+echo "  Ignore:          $([ -L "$ANKITOV_REPO/.gooseignore" ] && echo 'LINKED' || echo 'NOT LINKED')"
+echo "  Apps:            $(ls "$GOOSE_HOME/apps/"*.html 2>/dev/null | wc -l | tr -d ' ') files"
 
 # ------------------------------------------------------------------
 # Done
@@ -330,13 +400,26 @@ echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo "  ✅ Bootstrap complete!"
 echo ""
+echo "  What was linked:"
+echo "    • Global config       → ~/.config/goose/config.yaml"
+echo "    • Project config      → \$ANKITOV_REPO/goose_config.yaml (templated)"
+echo "    • Goose hints         → \$ANKITOV_REPO/.goosehints"
+echo "    • Goose ignore        → \$ANKITOV_REPO/.gooseignore"
+echo "    • Agents (4)          → \$ANKITOV_REPO/.goose/agents/"
+echo "    • Skills (1)          → \$ANKITOV_REPO/.agents/skills/"
+echo "    • Project recipes (5) → \$ANKITOV_REPO/recipes/"
+echo "    • System recipes      → ~/.local/share/goose/recipes/"
+echo "    • Scheduled jobs      → ~/.local/share/goose/scheduled_recipes/"
+echo ""
 echo "  Next steps:"
 echo "    1. Set your API keys as environment variables:"
 echo "       export OPENROUTER_API_KEY=\"sk-...\""
 echo "       export CUSTOM_AGNES_API_KEY=\"...\""
 echo "       export GOOSE_MODE=smart_approve"
 echo "       export GOOSE_TOOLSHIM=true"
-echo "    2. See ARCHITECTURE.md for cross-platform portability notes"
-echo "    3. cd $ANKITOV_REPO"
-echo "    4. goose session -r  (resume last session)"
+echo "    2. cd $ANKITOV_REPO && cargo check  (verify build)"
+echo "    3. goose session  (start working)"
+echo ""
+echo "  To update after pulling either repo: re-run this script."
+echo "  Symlinks auto-resolve — no copy step needed."
 echo "═══════════════════════════════════════════════════════════"
