@@ -103,8 +103,10 @@ fi
 echo ""
 echo "-- Step 8/13: Headroom --"
 if ! command -v headroom &>/dev/null; then
+  # Activate mise shims so python/pip are on PATH
+  eval "$(mise activate bash)" 2>/dev/null || true
   mise use python@3.12
-  pip install headroom
+  ~/.local/share/mise/shims/pip install headroom || mise exec python -- -m pip install headroom
   log "Headroom installed"
 else
   log "Headroom already installed"
