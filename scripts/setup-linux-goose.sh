@@ -64,9 +64,20 @@ else
   log "Mise already installed: $(mise --version)"
 fi
 
-# ── 5. TaskLite ────────────────────────────────────────
+# ── 5. Node.js + npm (required for code-graph-mcp) ─────
 echo ""
-echo "-- Step 5/9: TaskLite --"
+echo "-- Step 5/10: Node.js + npm --"
+if ! command -v node &>/dev/null; then
+  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  log "Node.js $(node --version) installed"
+else
+  log "Node.js already installed: $(node --version)"
+fi
+
+# ── 6. TaskLite ────────────────────────────────────────
+echo ""
+echo "-- Step 6/13: TaskLite --"
 if ! command -v tasklite &>/dev/null; then
   cargo install todo-sqlite-cli
   log "TaskLite installed"
@@ -74,9 +85,9 @@ else
   log "TaskLite already installed: $(tasklite --version)"
 fi
 
-# ── 6. code-graph-mcp (tree-sitter MCP server) ─────────
+# ── 7. code-graph-mcp (tree-sitter MCP server) ─────────
 echo ""
-echo "-- Step 6/9: code-graph-mcp --"
+echo "-- Step 7/13: code-graph-mcp --"
 if ! command -v code-graph-mcp &>/dev/null; then
   npm install -g code-graph-mcp
   log "code-graph-mcp installed"
@@ -84,9 +95,9 @@ else
   log "code-graph-mcp already installed"
 fi
 
-# ── 7. Headroom (compression proxy, via mise Python) ───
+# ── 8. Headroom (compression proxy, via mise Python) ───
 echo ""
-echo "-- Step 7/9: Headroom --"
+echo "-- Step 8/13: Headroom --"
 if ! command -v headroom &>/dev/null; then
   mise use python@3.12
   pip install headroom
@@ -95,9 +106,9 @@ else
   log "Headroom already installed"
 fi
 
-# ── 8. Mutagen (file sync engine) ──────────────────────
+# ── 9. Mutagen (file sync engine) ──────────────────────
 echo ""
-echo "-- Step 8/9: Mutagen --"
+echo "-- Step 9/13: Mutagen --"
 if ! command -v mutagen &>/dev/null; then
   curl -fsSL https://mutagen.io/install.sh | bash
   log "Mutagen installed"
@@ -105,9 +116,9 @@ else
   log "Mutagen already installed: $(mutagen version)"
 fi
 
-# ── 9. Clone AnkiTov repo ──────────────────────────────
+# ── 10. Clone AnkiTov repo ──────────────────────────────
 echo ""
-echo "-- Step 9/12: Clone AnkiTov --"
+echo "-- Step 10/13: Clone AnkiTov --"
 ANKITOV_PATH="${HOME}/AnkiTov"
 if [ ! -d "$ANKITOV_PATH" ]; then
   jj git clone https://github.com/yitzhakbg/AnkiTov.git "$ANKITOV_PATH"
@@ -117,9 +128,9 @@ else
   warn "Run: cd $ANKITOV_PATH && jj git fetch"
 fi
 
-# ── 10. Clone AnkiTov-Goose repo ───────────────────────
+# ── 11. Clone AnkiTov-Goose repo ───────────────────────
 echo ""
-echo "-- Step 10/12: Clone AnkiTov-Goose --"
+echo "-- Step 11/13: Clone AnkiTov-Goose --"
 GOOSE_PATH="${HOME}/AnkiTov-goose"
 if [ ! -d "$GOOSE_PATH" ]; then
   git clone https://github.com/yitzhakbg/AnkiTov-Goose.git "$GOOSE_PATH"
@@ -129,9 +140,9 @@ else
   warn "Run: cd $GOOSE_PATH && git pull"
 fi
 
-# ── 11. Run bootstrap.sh (symlinks + config rendering) ──
+# ── 12. Run bootstrap.sh (symlinks + config rendering) ──
 echo ""
-echo "-- Step 11/12: Bootstrap Goose symlinks --"
+echo "-- Step 12/13: Bootstrap Goose symlinks --"
 if [ -f "$GOOSE_PATH/bootstrap.sh" ]; then
   bash "$GOOSE_PATH/bootstrap.sh" "$ANKITOV_PATH"
   log "Goose environment linked — agents, skills, recipes, hints, configs"
@@ -140,9 +151,9 @@ else
   warn "Run manually: bash ~/AnkiTov-goose/bootstrap.sh ~/AnkiTov"
 fi
 
-# ── 12. Compile budget gate ────────────────────────────
+# ── 13. Compile budget gate ────────────────────────────
 echo ""
-echo "-- Step 12/12: Compile budget gate (x86_64) --"
+echo "-- Step 13/13: Compile budget gate (x86_64) --"
 cd "$ANKITOV_PATH/ankitov-budget-gate"
 cargo build --release
 log "Budget gate compiled for x86_64-unknown-linux-gnu"
