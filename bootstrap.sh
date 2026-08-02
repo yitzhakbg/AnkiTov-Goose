@@ -44,8 +44,8 @@ echo "  ℹ️  Detected architecture: $ARCH_LABEL"
 # ------------------------------------------------------------------
 # Validate AnkiTov repo
 # ------------------------------------------------------------------
-if [ ! -f "$ANKITOV_REPO/goose_config.yaml" ]; then
-  echo "❌ $ANKITOV_REPO does not look like an AnkiTov repo (missing goose_config.yaml)"
+if [ ! -f "$ANKITOV_REPO/Cargo.toml" ]; then
+  echo "❌ $ANKITOV_REPO does not look like an AnkiTov repo (missing Cargo.toml)"
   exit 1
 fi
 
