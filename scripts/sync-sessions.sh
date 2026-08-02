@@ -46,9 +46,17 @@ ensure_archive() {
 snapshot() {
   ensure_archive
   [ -f "$STORE_DIR/sessions.db" ] || die "No sessions.db found at $STORE_DIR"
-  say "Snapshotting sessions from $HOST -> $SNAPSHOT"
+  say "Snapshotting sessions from $HOST -> $SNAPSHOT (session history only)"
   # .backup is the only safe way to copy a live WAL-mode DB.
-  sqlite3 "$STORE_DIR/sessions.db" ".backup '$SNAPSHOT'"
+  sqlite3 "$STORE_DIR/sessions.db" ".backup '$SNAPSHOT.tmp'"
+  # Strip machine-local tables: provider/model inventory and usage ledger must
+  # never leave the machine (model config differs per host — never archive it).
+  sqlite3 "$SNAPSHOT.tmp" "
+    DELETE FROM provider_inventory_entries;
+    DELETE FROM provider_inventory_models;
+    DELETE FROM usage_ledger;
+    VACUUM;"
+  mv "$SNAPSHOT.tmp" "$SNAPSHOT"
   git -C "$ARCHIVE_DIR" add -A
   if git -C "$ARCHIVE_DIR" diff --cached --quiet; then
     say "No changes since last snapshot — nothing to commit."
@@ -85,13 +93,21 @@ restore() {
   local snap="$ARCHIVE_DIR/sessions-${src}.db"
   [ -f "$snap" ] || die "No snapshot for '$src'. Available: $(ls "$ARCHIVE_DIR"/sessions-*.db 2>/dev/null | xargs -n1 basename || echo none)"
   if pgrep -x goose >/dev/null 2>&1; then
-    die "goose is running. Quit it first — restore replaces the live DB underneath it."
+    die "goose is running. Quit it first — restore touches the live DB underneath it."
   fi
+  # Backup the current DB, then MERGE remote sessions into it. Provider/model
+  # inventory and usage ledger stay machine-local — never overwritten.
   [ -f "$STORE_DIR/sessions.db" ] && cp "$STORE_DIR/sessions.db" "$STORE_DIR/sessions.db.pre-restore"
-  say "Restoring $snap -> $STORE_DIR/sessions.db"
-  cp "$snap" "$STORE_DIR/sessions.db"
+  say "Merging sessions from $snap into local store (machine provider config untouched)"
+  sqlite3 "$STORE_DIR/sessions.db" <<SQL
+ATTACH '$snap' AS remote;
+INSERT OR IGNORE INTO sessions SELECT * FROM remote.sessions;
+INSERT OR IGNORE INTO messages SELECT * FROM remote.messages;
+DETACH remote;
+SQL
   rm -f "$STORE_DIR/sessions.db-wal" "$STORE_DIR/sessions.db-shm"
-  say "Restored. Pre-restore DB saved as sessions.db.pre-restore (delete when happy)."
+  say "Done. Local provider/usage config preserved; remote sessions added."
+  say "Pre-merge DB saved as sessions.db.pre-restore (delete when happy)."
 }
 
 list() {
