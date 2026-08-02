@@ -75,7 +75,17 @@ else
   log "Node.js already installed: $(node --version)"
 fi
 
-# ── 6. TaskLite ────────────────────────────────────────
+# ── 6. xvfb (virtual framebuffer for Goose terminal UI) ──
+echo ""
+echo "-- Step 6/14: xvfb (virtual framebuffer) --"
+if ! command -v xvfb-run &>/dev/null; then
+  sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+  log "xvfb installed"
+else
+  log "xvfb already installed"
+fi
+
+# ── 7. TaskLite ────────────────────────────────────────
 echo ""
 echo "-- Step 6/13: TaskLite --"
 if ! command -v tasklite &>/dev/null; then
@@ -87,7 +97,7 @@ fi
 
 # ── 7. code-graph-mcp (tree-sitter MCP server) ─────────
 echo ""
-echo "-- Step 7/13: code-graph-mcp --"
+echo "-- Step 8/15: code-graph-mcp --"
 if ! command -v code-graph-mcp &>/dev/null; then
   # Avoid EACCES on global installs by using user-local prefix
   mkdir -p "${HOME}/.local"
@@ -101,7 +111,7 @@ fi
 
 # ── 8. Headroom (compression proxy, via mise Python) ───
 echo ""
-echo "-- Step 8/13: Headroom --"
+echo "-- Step 9/15: Headroom --"
 if ! command -v headroom &>/dev/null; then
   # Activate mise shims so python/pip are on PATH
   eval "$(mise activate bash)" 2>/dev/null || true
@@ -114,7 +124,7 @@ fi
 
 # ── 9. Mutagen (file sync engine) ──────────────────────
 echo ""
-echo "-- Step 9/13: Mutagen --"
+echo "-- Step 10/15: Mutagen --"
 if ! command -v mutagen &>/dev/null; then
   MUTAGEN_VER="0.18.1"
   curl -fsSL "https://github.com/mutagen-io/mutagen/releases/download/v${MUTAGEN_VER}/mutagen_linux_amd64_v${MUTAGEN_VER}.tar.gz" | tar xz -C "${HOME}/.local/bin"
@@ -125,7 +135,7 @@ fi
 
 # ── 10. Clone AnkiTov repo ──────────────────────────────
 echo ""
-echo "-- Step 10/13: Clone AnkiTov --"
+echo "-- Step 11/15: Clone AnkiTov --"
 ANKITOV_PATH="${HOME}/AnkiTov"
 if [ ! -d "$ANKITOV_PATH" ]; then
   jj git clone https://github.com/yitzhakbg/AnkiTov.git "$ANKITOV_PATH"
@@ -137,7 +147,7 @@ fi
 
 # ── 11. Clone AnkiTov-Goose repo ───────────────────────
 echo ""
-echo "-- Step 11/13: Clone AnkiTov-Goose --"
+echo "-- Step 12/15: Clone AnkiTov-Goose --"
 GOOSE_PATH="${HOME}/AnkiTov-goose"
 if [ ! -d "$GOOSE_PATH" ]; then
   git clone https://github.com/yitzhakbg/AnkiTov-Goose.git "$GOOSE_PATH"
@@ -149,7 +159,7 @@ fi
 
 # ── 12. Run bootstrap.sh (symlinks + config rendering) ──
 echo ""
-echo "-- Step 12/13: Bootstrap Goose symlinks --"
+echo "-- Step 13/15: Bootstrap Goose symlinks --"
 if [ -f "$GOOSE_PATH/bootstrap.sh" ]; then
   bash "$GOOSE_PATH/bootstrap.sh" "$ANKITOV_PATH"
   log "Goose environment linked — agents, skills, recipes, hints, configs"
@@ -160,7 +170,7 @@ fi
 
 # ── 13. Compile budget gate ────────────────────────────
 echo ""
-echo "-- Step 13/13: Compile budget gate (x86_64) --"
+echo "-- Step 14/15: Compile budget gate (x86_64) --"
 cd "$ANKITOV_PATH/ankitov-budget-gate"
 cargo build --release
 log "Budget gate compiled for x86_64-unknown-linux-gnu"
