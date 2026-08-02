@@ -65,7 +65,8 @@ snapshot() {
 
 push() {
   ensure_archive
-  say "Pushing any unpushed snapshots..."
+  say "Pulling any remote snapshots first (rebase), then pushing..."
+  git -C "$ARCHIVE_DIR" pull --rebase origin HEAD 2>/dev/null || true
   git -C "$ARCHIVE_DIR" push origin HEAD
 }
 
