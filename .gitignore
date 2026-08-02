@@ -17,3 +17,8 @@ Thumbs.db
 # Don't commit the repo's own bootstrap config
 .env
 *.bak.*
+# Machine-specific — never distribute via git (each host has its own LLM/model config)
+config/global-config.yaml
+config/project-config.yaml
+custom_providers/
+goose_config.yaml

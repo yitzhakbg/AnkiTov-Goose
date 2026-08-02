@@ -163,9 +163,15 @@ template_and_link() {
 # ------------------------------------------------------------------
 echo ""
 echo "─── 1. Global Goose Config ───"
-template_and_link "$GOOSE_REPO/config/global-config.yaml" \
-                   "$CONFIG_HOME/config.yaml" \
-                   "global config "
+# Global config is machine-specific (LLM/model routing differs per host).
+# Preserve an existing config — never clobber the laptop's setup.
+if [ -e "$CONFIG_HOME/config.yaml" ] || [ -L "$CONFIG_HOME/config.yaml" ]; then
+  echo "  ℹ️  $CONFIG_HOME/config.yaml exists — preserving machine-specific LLM/model config"
+else
+  template_and_link "$GOOSE_REPO/config/global-config.yaml" \
+                     "$CONFIG_HOME/config.yaml" \
+                     "global config "
+fi
 
 # ------------------------------------------------------------------
 # 2. Custom providers
@@ -174,7 +180,13 @@ echo ""
 echo "─── 2. Custom Providers ───"
 for f in "$GOOSE_REPO/custom_providers"/*.json; do
   [ -f "$f" ] || continue
-  link "$f" "$CONFIG_HOME/custom_providers/$(basename "$f")"
+  dst="$CONFIG_HOME/custom_providers/$(basename "$f")"
+  # Provider configs are machine-specific — preserve the host's own.
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    echo "  ℹ️  $dst exists — preserving machine-specific provider config"
+    continue
+  fi
+  link "$f" "$dst"
 done
 
 # ------------------------------------------------------------------
@@ -277,9 +289,15 @@ fi
 # ------------------------------------------------------------------
 echo ""
 echo "─── 10. AnkiTov Project Config ───"
-template_and_link "$GOOSE_REPO/config/project-config.yaml" \
-                   "$ANKITOV_REPO/goose_config.yaml" \
-                   "project config "
+# Project config is machine-specific (provider/model routing differs per host).
+# Preserve an existing config — never clobber the laptop's setup.
+if [ -e "$ANKITOV_REPO/goose_config.yaml" ] || [ -L "$ANKITOV_REPO/goose_config.yaml" ]; then
+  echo "  ℹ️  $ANKITOV_REPO/goose_config.yaml exists — preserving machine-specific project config"
+else
+  template_and_link "$GOOSE_REPO/config/project-config.yaml" \
+                     "$ANKITOV_REPO/goose_config.yaml" \
+                     "project config "
+fi
 
 # ------------------------------------------------------------------
 # 11. AnkiTov agents (.goose/agents/)
