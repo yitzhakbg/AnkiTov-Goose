@@ -54,8 +54,9 @@ snapshot() {
   sqlite3 "$SNAPSHOT.tmp" "
     DELETE FROM provider_inventory_entries;
     DELETE FROM provider_inventory_models;
-    DELETE FROM usage_ledger;
-    VACUUM;"
+    DELETE FROM usage_ledger;"
+  # VACUUM is best-effort: it fails on legacy-corrupt DBs (the DELETEs still apply).
+  sqlite3 "$SNAPSHOT.tmp" "VACUUM;" 2>/dev/null || true
   mv "$SNAPSHOT.tmp" "$SNAPSHOT"
   git -C "$ARCHIVE_DIR" add -A
   if git -C "$ARCHIVE_DIR" diff --cached --quiet; then
