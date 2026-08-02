@@ -23,7 +23,7 @@ set -euo pipefail
 ARCHIVE_DIR="${GOOSE_SESSIONS_ARCHIVE:-$HOME/.goose-sessions-archive}"
 STORE_DIR="${GOOSE_SESSIONS_STORE:-$HOME/.local/share/goose/sessions}"
 REMOTE_URL="${GOOSE_SESSIONS_REMOTE:-https://github.com/yitzhakbg/AnkiTov-Sessions.git}"
-HOST="$(hostname -s 2>/dev/null || hostname | tr '[:upper:]' '[:lower:]' | sed 's/\.local$//' | sed 's/\.//g')"
+HOST="$( (hostname -s 2>/dev/null || hostname) | tr '[:upper:]' '[:lower:]' | sed 's/\.local$//' | sed 's/\.//g' )"
 SNAPSHOT="$ARCHIVE_DIR/sessions-${HOST}.db"
 
 say() { printf '\033[1;32m%s\033[0m\n' "$*"; }
