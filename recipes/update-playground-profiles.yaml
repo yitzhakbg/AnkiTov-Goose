@@ -1,0 +1,22 @@
+version: "1.0.0"
+title: "Update AnkiPlayGround Profiles"
+description: "Regenerates realistic practice data for all 28 student profiles in AnkiPlayGround, producing a fresh spread of review patterns across star students, consistent practicers, weekend skippers, inconsistent students, struggling students, new joiners, and drop-offs."
+instructions: |
+  Run the profiles_update.py script to regenerate realistic practice data for all student profiles.
+
+  1. Locate the AnkiPlayGround directory. It is a subdirectory of the current
+     working directory (e.g. `./AnkiPlayGround`). Confirm it exists first:
+     ls AnkiPlayGround/profiles_update.py
+     If it is not directly under the working directory, find it:
+     find . -maxdepth 3 -name profiles_update.py -not -path '*/node_modules/*'
+  2. Change to that directory and run the script:
+     python3 profiles_update.py
+  3. Verify the output shows all 28 profiles were processed with review counts.
+  4. Report the total number of reviews generated and any profiles that had errors.
+
+  Note: the AnkiPlayGround tree lives in the AnkiTov project, so this recipe
+  must be run from a session whose working directory is the AnkiTov project root
+  (or an ancestor that contains it).
+prompt: "Run profiles_update.py in the AnkiPlayGround directory to regenerate all 28 profiles with realistic classroom practice data"
+settings:
+  max_turns: 10
