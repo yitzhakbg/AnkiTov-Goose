@@ -1,0 +1,11 @@
+version: "1.0.0"
+title: "Archive Chat Context"
+description: "Archive the active session summary to .goose/briefs/archive/ without overriding the active latest brief."
+
+instructions: |
+  Archive context from this chat session to an immutable archive file.
+
+  1. Gather the session's key findings, commits (`jj log --limit 2`), and notes.
+  2. Determine an appropriate slug from the session topic: `YYYY-MM-DD-HHmm-<topic>.md`.
+  3. Write the detailed markdown report directly to `.goose/briefs/archive/<slug>`.
+  4. Confirm to the operator that the session has been archived.

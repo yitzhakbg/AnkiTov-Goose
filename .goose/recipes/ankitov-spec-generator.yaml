@@ -1,0 +1,77 @@
+version: "1.0.0"
+title: "AnkiTov Specification Generator"
+description: >
+  Generate a structured engineering specification for any AnkiTov prong.
+  Uses Goose plan mode for interactive clarification, then produces a
+  JSON response with full markdown spec and implementation task list.
+
+parameters:
+  - key: prong_number
+    input_type: number
+    requirement: required
+    description: "Prong number (1-7) from the AnkiTov roadmap"
+
+  - key: prong_name
+    input_type: string
+    requirement: required
+    description: "Short name of the prong (e.g., 'Management Console')"
+
+  - key: prong_description
+    input_type: string
+    requirement: required
+    description: >
+      Detailed objectives, constraints, and scope boundaries for this prong.
+      Include what to build AND what to avoid (e.g., 'avoid card/note creation paths,
+      focus on read-only administrative visualization')
+
+settings:
+  max_turns: 100
+
+instructions: |
+  You are the Principal Systems Architect for AnkiTov, a Rust-native knowledge
+  retention infrastructure. Your task is to generate a complete engineering
+  specification for Prong {{ prong_number }}: {{ prong_name }}.
+
+  ## Context
+  The .goosehints file and workspace/Strategic_Blueprint.md contain the full
+  AnkiTov genesis narrative, 5-layer isolation hierarchy, streaming paradigm,
+  DRM architecture, and clearing house model. Read them carefully before starting.
+
+  ## Codebase Reference
+  The AnkiTov codebase at /Volumes/YBG1TB4Mac/AnkiTov uses:
+  - Loco.rs (Rust MVC) with Axum WebSockets
+  - SeaORM over libSQL (WAL mode)
+  - Rig Core for non-conversational AI pipelines
+  - Jujutsu (jj) for version control
+  - ankitov-budget-gate for model spend routing
+
+  ## Prong Scope
+  {{ prong_description }}
+
+  ## Process
+  1. Use /plan mode to break this into sub-steps
+  2. Read the existing codebase (controllers, models, app.rs)
+  3. Ask clarifying questions about scope, data models, and integration points
+  4. Generate the specification and task list
+
+  ## Output Requirements
+  - Write the spec to specs/{{ prong_name | lower | replace(' ', '_') }}_architecture.md
+  - Append tasks to specs/tasks.md in tasklite-compatible format: `- [ ] Task description`
+  - Each task must be actionable, atomic, and testable
+  - Separate tasks into phases: ANALYSIS → TEST COVERAGE → IMPLEMENTATION → VALIDATION
+
+response:
+  json_schema:
+    type: object
+    properties:
+      specification_md:
+        type: string
+        description: "Full markdown engineering specification with data models, API routes, failure modes, and integration points"
+      tasks:
+        type: array
+        items:
+          type: string
+        description: "Ordered, atomic implementation tasks in tasklite-compatible format"
+    required:
+      - specification_md
+      - tasks

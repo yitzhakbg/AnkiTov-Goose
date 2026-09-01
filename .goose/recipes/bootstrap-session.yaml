@@ -1,0 +1,17 @@
+version: "1.0.0"
+title: "Bootstrap Session"
+description: "Initialize working context from .goose/briefs/latest.md and verify Jujutsu repository state."
+
+instructions: |
+  Initialize working context for a new session efficiently without redundant file reads.
+
+  1. Read `.goose/briefs/latest.md` if it exists to retrieve the previous session's handoff state.
+  2. Inspect Jujutsu state using `jj log --limit 3` and `jj status` via developer shell commands.
+  3. Verify current compilation sanity via `cargo check` (in `backend/` or repo root as appropriate).
+  4. Compare the state in `latest.md` against actual repository state (check branch/bookmark, working copy changes).
+  5. Formulate a concise **Active Working Envelope** (under 200 words):
+     - Current Goal / Prong
+     - Active Branch / Bookmark & Base Commit
+     - Current Working Set (modified/relevant files)
+     - Top Priority Immediate Action
+  6. Present the summary to the operator and request confirmation before proceeding with work.

@@ -1,0 +1,11 @@
+version: "1.0.0"
+title: "Compact Context"
+description: "Offload bulky tool outputs, logs, or large diffs to .goose/offload/ to protect context token budget."
+
+instructions: |
+  Clean up working context and store bulky inspection logs onto disk.
+
+  1. Review recent long tool outputs (such as test suites, large diffs, or compiler traces).
+  2. Write detailed verbose logs or large text blobs into `.goose/offload/YYYY-MM-DD-HHmm-<topic>.txt`.
+  3. Replace verbose details in chat discussion with concise 2-sentence summaries plus a file:line reference to the offloaded artifact.
+  4. Ensure `.goose/offload/` files are referenced cleanly so subsequent queries can inspect them if necessary.

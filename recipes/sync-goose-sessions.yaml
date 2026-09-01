@@ -1,0 +1,61 @@
+version: "1.0.0"
+title: "Sync Goose Sessions"
+description: >
+  Mirror Goose chat sessions between the Mac (ybgmacmini) and the ybgXPS laptop
+  (ybgxps) via the git-backed snapshot/restore script. Pick the source machine;
+  it snapshots, restores the other, auto-remaps working_dir to local paths, and
+  verifies both machines show the same session count.
+
+instructions: |
+  Sync Goose sessions between the two machines using scripts/sync-sessions.sh
+  (present on both, synced via mutagen).
+
+  The source machine is: {{ .research_doc }}
+    - "mac"    -> Mac is the source. Snapshot on Mac, restore on the laptop.
+    - "laptop" -> Laptop is the source. Snapshot on laptop, restore on the Mac.
+  If the value is empty or unclear, ask the user which direction they want.
+
+  Steps:
+  1. SNAPSHOT on the source machine:
+       cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot
+     Run locally if you are on the source; otherwise over SSH:
+       - to laptop: ssh -i ~/.ssh/id_ed25519_4_AnkiTov ybg@ybgxps '...'
+       - to Mac:    ssh -i ~/.ssh/id_ed25519_mac_sync ybg@mac-mini '...'
+
+  2. On the TARGET machine, quit Goose first (restore replaces the live DB;
+     the script refuses if Goose is running):
+       pkill -x goose 2>/dev/null; pkill -f 'goose serve' 2>/dev/null; sleep 1
+
+  3. RESTORE on the target, using the SOURCE's friendly key:
+       cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore <mac|laptop>
+     `restore` auto-pulls the latest snapshot, replaces sessions.db, then
+     auto-runs `remap` to rewrite each session's working_dir to the nearest
+     existing local path (or $HOME) so foreign paths don't fail to load.
+
+  4. VERIFY both machines agree:
+       sqlite3 ~/.local/share/goose/sessions/sessions.db 'SELECT COUNT(*) FROM sessions'
+     Report the count on each and confirm they match.
+
+  Notes:
+  - Never rsync the workspace — mutagen owns it (ankitov-goose 2-way session).
+  - Config (custom_providers/, memory/, buzz agents/harnesses) syncs separately
+    via goose-buzz-sync.sh (Mac->laptop) and goose-sync-reverse.sh (laptop->Mac).
+  - Backups sessions.db.pre-restore / sessions.db.pre-remap remain in the live
+    dir; tell the user they can delete them once satisfied.
+  - Full reference: docs/GOOSE-SYNC.md
+
+parameters:
+  - key: research_doc
+    input_type: string
+    requirement: user_prompt
+    description: "Source machine to sync FROM: 'mac' or 'laptop'"
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 300
+    bundled: true
+
+prompt: |
+  Sync Goose sessions. Source machine: {{ .research_doc }}
+  (mac = the Mac mini; laptop = the ybgXPS laptop).

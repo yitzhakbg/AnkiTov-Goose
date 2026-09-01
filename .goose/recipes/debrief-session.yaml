@@ -1,0 +1,19 @@
+version: "1.0.0"
+title: "Debrief Session"
+description: "Audit session changes, record lessons learned, and write handoff brief to .goose/briefs/latest.md."
+
+instructions: |
+  Close out the session systematically to preserve context for the next session.
+
+  1. Run `jj status` and `jj log --limit 2` to capture the current commit, modified files, and working branch.
+  2. Run `cargo check` to record current compilation status.
+  3. Extract core outcomes from this session:
+     - What was accomplished
+     - Key architectural or code decisions made
+     - Immediate next steps for the next chat
+     - Any blockers, gotchas, or failed attempts (and how they were resolved)
+  4. Write the structured handoff brief to `.goose/briefs/latest.md`.
+  5. Save an immutable timestamped copy to `.goose/briefs/archive/YYYY-MM-DD-HHmm.md`.
+  6. If any new persistent gotchas or rules were discovered, append them to `workspace/Gotchas.md`.
+  7. If significant decisions were finalized, append a brief entry to `project-knowledge/key-decisions.md`.
+  8. Present a 5-line closing summary to the operator.
