@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goose Session Sync</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --card:#1a1e24;
+    --card-2:#151920;
+    --border:#262c35;
+    --text:#e6e9ee;
+    --muted:#8b93a1;
+    --faint:#5c6472;
+    --blue:#4f8cff;
+    --green:#3ddc84;
+    --mono:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:0;
+  }
+  .wrap{
+    max-width:720px;
+    margin:0 auto;
+    padding:28px 22px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  /* Header */
+  header.head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    padding-bottom:4px;
+  }
+  .title{
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
+  .title .duck{margin-right:8px;}
+  .subtitle{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:3px;
+    letter-spacing:0.01em;
+  }
+  .status-pill{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(61,220,132,0.6);}
+
+  /* Cards */
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 18px;
+  }
+  .card h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .tag{
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:11px;
+    color:var(--faint);
+    letter-spacing:0;
+    text-transform:none;
+  }
+
+  /* How it works */
+  .how ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .how li{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+    font-size:14px;
+    color:#c9cfda;
+  }
+  .num{
+    flex:none;
+    width:22px;height:22px;
+    border-radius:7px;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:1px;
+  }
+  .how code{
+    font-family:var(--mono);
+    font-size:12.5px;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:1px 5px;
+    color:#aeb7c6;
+  }
+
+  /* Big direction buttons */
+  .dir{
+    width:100%;
+    text-align:left;
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:0;
+    cursor:pointer;
+    color:var(--text);
+    font-family:var(--sans);
+    transition:border-color .18s ease, background .18s ease, transform .08s ease;
+    overflow:hidden;
+    margin-bottom:0;
+  }
+  .dir:last-child{margin-bottom:0;}
+  .dir .dir-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:18px 18px;
+  }
+  .dir .dir-title{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .dir .arrow{font-size:18px;font-weight:400;}
+  .dir.mac2laptop .dir-title{color:var(--blue);}
+  .dir.laptop2mac .dir-title{color:var(--green);}
+  .dir .hint{font-size:13px;color:var(--muted);}
+  .chev{
+    transition:transform .25s ease;
+    color:var(--faint);
+    font-size:18px;
+  }
+  .dir[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .dir.mac2laptop:hover{border-color:var(--blue);}
+  .dir.laptop2mac:hover{border-color:var(--green);}
+  .dir.mac2laptop[aria-expanded="true"]{border-color:var(--blue);background:linear-gradient(180deg,rgba(79,140,255,0.06),var(--card));}
+  .dir.laptop2mac[aria-expanded="true"]{border-color:var(--green);background:linear-gradient(180deg,rgba(61,220,132,0.06),var(--card));}
+  .dir:active{transform:translateY(1px);}
+  .dir:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+
+  .steps{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .3s ease;
+  }
+  .dir[aria-expanded="true"] .steps{grid-template-rows:1fr;}
+  .steps-inner{overflow:hidden;}
+  .steps-body{
+    padding:0 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    align-self:flex-start;
+    background:rgba(255,180,60,0.10);
+    border:1px solid rgba(255,180,60,0.35);
+    color:#ffc266;
+    border-radius:999px;
+    padding:6px 13px;
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .step{
+    display:flex;
+    gap:12px;
+    align-items:stretch;
+  }
+  .step .num{align-self:flex-start;}
+  .step-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .step-label{font-size:13px;color:var(--muted);}
+  .cmd{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:9px 10px;
+  }
+  .cmd .code{
+    flex:1;
+    font-family:var(--mono);
+    font-size:13px;
+    color:#d5dbe6;
+    overflow-x:auto;
+    white-space:nowrap;
+    scrollbar-width:thin;
+  }
+  .cmd .code.plain{color:var(--muted);font-style:italic;}
+
+  /* Copy button */
+  .copy{
+    flex:none;
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:7px;
+    padding:5px 9px;
+    font-size:11.5px;
+    font-family:var(--sans);
+    font-weight:600;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .copy:hover{color:var(--text);border-color:var(--faint);background:#11151c;}
+  .copy.ok{color:var(--green);border-color:var(--green);}
+
+  /* Quick commands */
+  .quick .row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .quick .row:last-child{border-bottom:none;}
+  .quick .qlabel{
+    flex:none;
+    width:112px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .quick .qcode{
+    flex:1;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:#cdd4e0;
+    overflow-x:auto;
+    white-space:nowrap;
+    scrollbar-width:thin;
+  }
+  .quick .qcode .cmd-inline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 9px;
+  }
+
+  /* Machine keys */
+  .keys table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  .keys th{
+    text-align:left;
+    color:var(--faint);
+    font-weight:600;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:6px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .keys td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .keys tr:last-child td{border-bottom:none;}
+  .keys td .m{font-weight:600;}
+  .keys td code{
+    font-family:var(--mono);
+    font-size:12.5px;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 7px;
+    color:#aeb7c6;
+  }
+
+  /* Troubleshooting */
+  .trouble{padding:0;}
+  .trouble summary{
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 18px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .trouble summary::-webkit-details-marker{display:none;}
+  .trouble summary .chev{transition:transform .25s ease;}
+  .trouble[open] summary .chev{transform:rotate(180deg);}
+  .trouble .tr-body{
+    padding:0 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .trouble .item{
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:11px 13px;
+  }
+  .trouble .item .t-title{font-size:13.5px;font-weight:600;margin-bottom:3px;}
+  .trouble .item .t-title code{
+    font-family:var(--mono);
+    font-size:12.5px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:1px 5px;
+    color:var(--blue);
+  }
+  .trouble .item p{margin:0;font-size:13px;color:var(--muted);}
+  .trouble .item p code{
+    font-family:var(--mono);
+    font-size:12px;
+    background:var(--bg);
+    border-radius:4px;
+    padding:1px 5px;
+    color:#aeb7c6;
+  }
+  .warn{color:#ffc266;font-size:13px;font-weight:600;display:flex;gap:7px;align-items:flex-start;}
+  .warn p{margin:0;font-weight:500;}
+
+  /* Footer */
+  footer.foot{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 18px;
+    justify-content:center;
+    align-items:center;
+    color:var(--faint);
+    font-size:12.5px;
+    padding-top:6px;
+  }
+  footer.foot .ref code{
+    font-family:var(--mono);
+    font-size:12px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 7px;
+    color:var(--muted);
+  }
+
+  @media (max-width:560px){
+    .title{font-size:22px;}
+    .dir .dir-title{font-size:16px;}
+    .status-pill{display:none;}
+    .quick .qlabel{width:84px;font-size:12px;}
+    .wrap{padding:20px 14px 32px;}
+  }
+</style>
+  <script type="application/ld+json">
+{
+  "@context": "urn:goose.ai:schema",
+  "@type": "GooseApp",
+  "name": "goose-session-sync",
+  "description": "Dark dashboard showing exactly how to snapshot, sync, and restore Goose sessions between the Mac and the ybgXPS laptop.",
+  "width": 760,
+  "height": 900,
+  "resizable": true,
+  "mcpServers": [
+    "apps"
+  ]
+}
+  </script>
+  <script type="application/x-goose-prd">
+A clean, dark-themed dashboard titled "Goose Session Sync" for keeping Goose chat sessions mirrored between two machines: the Mac (ybgmacmini) and the ybgXPS laptop (ybgxps). Purpose: a user who forgets things easily can always see exactly what to do.
+
+Layout (single page, responsive, works in a standalone window):
+- Header: "Goose Session Sync" with a small subtitle "Mac <-> ybgXPS laptop".
+- A "How it works" card: 3 short bullet points — (1) sessions live in a SQLite DB that can't be real-time synced, (2) we snapshot via scripts/sync-sessions.sh and push to GitHub, (3) restore auto-remaps working_dir to local paths.
+- TWO big direction buttons (the primary action, made very prominent):
+  * "Mac -> Laptop"  (blue accent)
+  * "Laptop -> Mac"  (green accent)
+  When clicked, each expands a step panel showing 3 numbered commands in a copyable code block, plus a reminder chip "Quit Goose on the target machine first!". Each command line should have a small copy-to-clipboard button.
+    Mac->Laptop steps:
+      1. On the Mac:  cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot
+      2. On the Laptop: quit Goose
+      3. On the Laptop: cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore mac
+    Laptop->Mac steps:
+      1. On the Laptop:  cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot
+      2. On the Mac: quit Goose
+      3. On the Mac: cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore laptop
+- A "Quick commands" card listing the one-liners with copy buttons:
+    list snapshots:   bash scripts/sync-sessions.sh list
+    fix paths:        bash scripts/sync-sessions.sh remap
+    pull only:        bash scripts/sync-sessions.sh pull
+    verify match:     sqlite3 ~/.local/share/goose/sessions/sessions.db 'SELECT COUNT(*) FROM sessions'
+- A "Machine keys" mini-table: mac -> sessions-ybgmacmini.db ; laptop -> sessions-ybgxps.db.
+- A small "Troubleshooting" collapsed section: what "Invalid directory path" means (foreign working_dir) and that `restore` auto-fixes it via remap; and that the workspace is owned by mutagen (never rsync it).
+- A footer line: "Reference: docs/GOOSE-SYNC.md" and "Recipe: @sync-goose-sessions".
+
+Style: modern, minimal, dark background (#0f1115), subtle cards (#1a1e24) with rounded corners, monospace font for code, soft accent colors (blue #4f8cff, green #3ddc84), clear hover states, copy buttons show a brief "copied" confirmation. Keep it self-contained in one HTML file (inline CSS + vanilla JS, no external deps).
+  </script>
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="head">
+      <div>
+        <div class="title"><span class="duck">🦆</span>Goose Session Sync</div>
+        <div class="subtitle">Mac &harr; ybgXPS laptop &mdash; keep your Goose chat sessions mirrored</div>
+      </div>
+      <div class="status-pill"><span class="dot"></span>recipe: @sync-goose-sessions</div>
+    </header>
+
+    <!-- How it works -->
+    <section class="card how">
+      <h2>How it works</h2>
+      <ul>
+        <li>
+          <span class="num">1</span>
+          <div>Sessions live in a <strong>SQLite DB</strong> (<code>sessions.db</code>) that can&rsquo;t be real-time synced across machines.</div>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <div>We take a <strong>snapshot</strong> with <code>scripts/sync-sessions.sh</code> and push it to GitHub.</div>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <div><strong>Restore</strong> auto-remaps <code>working_dir</code> to the local paths so sessions open cleanly.</div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Big direction buttons -->
+    <div>
+      <button class="dir mac2laptop" id="dirA" aria-expanded="false" aria-controls="stepsA">
+        <div class="dir-head">
+          <div>
+            <div class="dir-title"><span>Mac</span><span class="arrow">&rarr;</span><span>Laptop</span></div>
+            <div class="hint">Snapshot on the Mac, restore onto the ybgXPS laptop</div>
+          </div>
+          <span class="chev">&#9662;</span>
+        </div>
+        <div class="steps" id="stepsA" role="region" aria-label="Mac to Laptop steps">
+          <div class="steps-inner">
+            <div class="steps-body">
+              <div class="chip">⚠️ Quit Goose on the target machine first!</div>
+              <div class="step">
+                <span class="num">1</span>
+                <div class="step-text">
+                  <div class="step-label">On the Mac</div>
+                  <div class="cmd">
+                    <span class="code">cd ~/AnkiTov-goose &amp;&amp; bash scripts/sync-sessions.sh snapshot</span>
+                    <button class="copy" data-copy="cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot">copy</button>
+                  </div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="num">2</span>
+                <div class="step-text">
+                  <div class="step-label">On the Laptop</div>
+                  <div class="cmd">
+                    <span class="code plain">quit Goose</span>
+                    <button class="copy" data-copy="quit Goose">copy</button>
+                  </div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="num">3</span>
+                <div class="step-text">
+                  <div class="step-label">On the Laptop</div>
+                  <div class="cmd">
+                    <span class="code">cd ~/AnkiTov-goose &amp;&amp; bash scripts/sync-sessions.sh restore mac</span>
+                    <button class="copy" data-copy="cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore mac">copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div>
+      <button class="dir laptop2mac" id="dirB" aria-expanded="false" aria-controls="stepsB">
+        <div class="dir-head">
+          <div>
+            <div class="dir-title"><span>Laptop</span><span class="arrow">&rarr;</span><span>Mac</span></div>
+            <div class="hint">Snapshot on the ybgXPS laptop, restore onto the Mac</div>
+          </div>
+          <span class="chev">&#9662;</span>
+        </div>
+        <div class="steps" id="stepsB" role="region" aria-label="Laptop to Mac steps">
+          <div class="steps-inner">
+            <div class="steps-body">
+              <div class="chip">⚠️ Quit Goose on the target machine first!</div>
+              <div class="step">
+                <span class="num">1</span>
+                <div class="step-text">
+                  <div class="step-label">On the Laptop</div>
+                  <div class="cmd">
+                    <span class="code">cd ~/AnkiTov-goose &amp;&amp; bash scripts/sync-sessions.sh snapshot</span>
+                    <button class="copy" data-copy="cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot">copy</button>
+                  </div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="num">2</span>
+                <div class="step-text">
+                  <div class="step-label">On the Mac</div>
+                  <div class="cmd">
+                    <span class="code plain">quit Goose</span>
+                    <button class="copy" data-copy="quit Goose">copy</button>
+                  </div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="num">3</span>
+                <div class="step-text">
+                  <div class="step-label">On the Mac</div>
+                  <div class="cmd">
+                    <span class="code">cd ~/AnkiTov-goose &amp;&amp; bash scripts/sync-sessions.sh restore laptop</span>
+                    <button class="copy" data-copy="cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore laptop">copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Quick commands -->
+    <section class="card quick">
+      <h2>Quick commands <span class="tag">run in ~/AnkiTov-goose</span></h2>
+      <div class="row">
+        <div class="qlabel">list snapshots</div>
+        <div class="qcode"><div class="cmd-inline"><span>bash scripts/sync-sessions.sh list</span><button class="copy" data-copy="bash scripts/sync-sessions.sh list">copy</button></div></div>
+      </div>
+      <div class="row">
+        <div class="qlabel">fix paths</div>
+        <div class="qcode"><div class="cmd-inline"><span>bash scripts/sync-sessions.sh remap</span><button class="copy" data-copy="bash scripts/sync-sessions.sh remap">copy</button></div></div>
+      </div>
+      <div class="row">
+        <div class="qlabel">pull only</div>
+        <div class="qcode"><div class="cmd-inline"><span>bash scripts/sync-sessions.sh pull</span><button class="copy" data-copy="bash scripts/sync-sessions.sh pull">copy</button></div></div>
+      </div>
+      <div class="row">
+        <div class="qlabel">verify match</div>
+        <div class="qcode"><div class="cmd-inline"><span>sqlite3 ~/.local/share/goose/sessions/sessions.db 'SELECT COUNT(*) FROM sessions'</span><button class="copy" data-copy="sqlite3 ~/.local/share/goose/sessions/sessions.db 'SELECT COUNT(*) FROM sessions'">copy</button></div></div>
+      </div>
+    </section>
+
+    <!-- Machine keys -->
+    <section class="card keys">
+      <h2>Machine keys</h2>
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Snapshot file</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="m">mac</span></td>
+            <td><code>sessions-ybgmacmini.db</code></td>
+          </tr>
+          <tr>
+            <td><span class="m">laptop</span></td>
+            <td><code>sessions-ybgxps.db</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Troubleshooting -->
+    <details class="card trouble">
+      <summary>Troubleshooting <span class="chev">&#9662;</span></summary>
+      <div class="tr-body">
+        <div class="item">
+          <div class="t-title">"Invalid directory path"</div>
+          <p>Means the session has a <code>working_dir</code> from the <em>other</em> machine (a foreign path). Just run <code>restore</code> &mdash; it auto-fixes this via <code>remap</code>, rewriting paths to your local ones.</p>
+        </div>
+        <div class="item">
+          <div class="t-title">Never rsync the workspace</div>
+          <p class="warn">🔒 <p>The workspace is owned by <code>mutagen</code>. Don&rsquo;t rsync it manually &mdash; you&rsquo;ll fight mutagen and corrupt the sync. Only move sessions through the snapshot / restore scripts above.</p></p>
+        </div>
+      </div>
+    </details>
+
+    <footer class="foot">
+      <span class="ref">Reference: <code>docs/GOOSE-SYNC.md</code></span>
+      <span>Recipe: <code>@sync-goose-sessions</code></span>
+    </footer>
+
+  </div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // Expand / collapse the big direction buttons
+    var dirs = document.querySelectorAll('.dir');
+    dirs.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      });
+    });
+
+    // Copy-to-clipboard with a brief confirmation
+    function copyText(text){
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(text);
+      }
+      // Fallback
+      return new Promise(function(resolve, reject){
+        try{
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.top = '-9999px';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          var ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          if(ok) resolve(); else reject(new Error('copy failed'));
+        }catch(e){ reject(e); }
+      });
+    }
+
+    var copyBtns = document.querySelectorAll('.copy');
+    copyBtns.forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation(); // don't toggle the accordion behind it
+        var target = btn.closest('.dir');
+        if(target){
+          // prevent accidental re-collapse from a stray click
+          e.preventDefault();
+        }
+        var text = btn.getAttribute('data-copy') || '';
+        copyText(text).then(function(){
+          markCopied(btn, 'copied');
+        }).catch(function(){
+          markCopied(btn, 'error');
+          setTimeout(function(){ restoreLabel(btn); }, 1600);
+        });
+      });
+    });
+
+    function markCopied(btn, state){
+      var original = btn.getAttribute('data-orig') || btn.textContent;
+      btn.setAttribute('data-orig', original);
+      if(state === 'copied'){
+        btn.textContent = 'copied ✓';
+        btn.classList.add('ok');
+        setTimeout(function(){ restoreLabel(btn); }, 1400);
+      }else{
+        btn.textContent = 'failed';
+        btn.classList.remove('ok');
+      }
+    }
+    function restoreLabel(btn){
+      var original = btn.getAttribute('data-orig');
+      if(original) btn.textContent = original;
+      btn.classList.remove('ok');
+    }
+
+    // Make sure only one accordion is open at a time for clarity
+    dirs.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(btn.getAttribute('aria-expanded') === 'true'){
+          dirs.forEach(function(o){
+            if(o !== btn) o.setAttribute('aria-expanded', 'false');
+          });
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
