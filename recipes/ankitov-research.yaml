@@ -1,7 +1,7 @@
 version: "1.0.0"
 title: "AnkiTov Research Codebase"
 description: >
-  Research and document the AnkiTov codebase using parallel sub-agents.
+  Research and document the AnkiTov codebase.
   Outputs to specs/research/. Step 1 of the AnkiTov RPI workflow.
 
 instructions: |
@@ -10,10 +10,20 @@ instructions: |
 
   1. Read any mentioned files fully.
   2. Decompose the topic into 3-5 research areas.
-  3. Spawn parallel subrecipes: find_files, analyze_code, find_patterns.
-  4. Wait for all results, synthesize.
-  5. Run `date -Iseconds` and `jj log --limit 1`.
-  6. Write `specs/research/YYYY-MM-DD-HHmm-<topic>.md` with: research question, summary, detailed findings (file:line refs), patterns observed, open questions.
+  3. For each area, investigate using the Code Graph extension and the
+     analyze extension (use them directly — there are no separate
+     sub-recipes). Prefer:
+       - `codegraph__semantic_code_search` for concept queries without an exact symbol
+       - `codegraph__get_ast_node` (include_references / include_impact) for a known symbol's
+         signature, callers, and blast radius
+       - `codegraph__get_call_graph` to trace a function or an HTTP route
+       - `codegraph__project_map` / `codegraph__module_overview` for structure
+       - `analyze` for directory trees and LOC/function counts
+     For exact string/pattern searches, still use ripgrep via the shell.
+  4. Synthesize findings across the areas.
+  5. Run `date -Iseconds` and `jj log --limit 1` for metadata.
+  6. Write `specs/research/YYYY-MM-DD-HHmm-<topic>.md` with: research question,
+     summary, detailed findings (file:line refs), patterns observed, open questions.
   7. Present summary. Ask if they have follow-up questions.
 
 parameters:
@@ -21,14 +31,6 @@ parameters:
     input_type: string
     requirement: user_prompt
     description: "What to research in the codebase"
-
-sub_recipes:
-  - name: "find_files"
-    path: "./subrecipes/ankitov-locator.yaml"
-  - name: "analyze_code"
-    path: "./subrecipes/ankitov-analyzer.yaml"
-  - name: "find_patterns"
-    path: "./subrecipes/ankitov-pattern-finder.yaml"
 
 extensions:
   - type: builtin
@@ -39,10 +41,17 @@ extensions:
     name: analyze
     timeout: 300
     bundled: true
+  - type: stdio
+    name: code-graph
+    display_name: Code Graph
+    cmd: code-graph-mcp
+    args:
+    - serve
 
 prompt: |
   Research topic: {{ topic }}
 
-  Spawn 3 parallel subrecipes (find_files, analyze_code, find_patterns).
-  Synthesize results, gather jj metadata, write to specs/research/.
-  Present summary. Do NOT suggest changes — document what IS.
+  Use the Code Graph extension (semantic search, AST node, call graph, module
+  overview) and the analyze extension directly to investigate the codebase.
+  Gather jj metadata, write the result to specs/research/, and present a
+  summary. Do NOT suggest changes — document what IS.

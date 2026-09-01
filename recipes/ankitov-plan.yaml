@@ -9,7 +9,14 @@ instructions: |
   Build commands: `cd backend && cargo check`, `cargo nextest run`.
 
   1. Read the research doc AND design discussion doc fully. These constrain the plan.
-  2. Spawn subrecipes only if the docs have gaps.
+  2. If the docs have gaps, close them using the Code Graph extension and the
+     analyze extension directly (there are no separate sub-recipes):
+       - `codegraph__get_ast_node` (include_references / include_impact) to confirm a
+         symbol's signature, callers, and blast radius before planning around it
+       - `codegraph__get_call_graph` to trace a function or HTTP route
+       - `codegraph__project_map` / `codegraph__module_overview` to confirm module layout
+       - `analyze` for directory structure and file/LOC context
+     Use ripgrep for exact string/pattern lookups.
   3. Ask clarifying questions you can't answer from the docs.
   4. Propose phase structure. Get feedback before writing details.
   5. Write `specs/plans/YYYY-MM-DD-HHmm-<description>.md` using `specs/templates/plan-template.md`.
@@ -28,12 +35,6 @@ parameters:
     default: ""
     description: "Path to design discussion doc (preferred) or research doc"
 
-sub_recipes:
-  - name: "find_files"
-    path: "./subrecipes/ankitov-locator.yaml"
-  - name: "analyze_code"
-    path: "./subrecipes/ankitov-analyzer.yaml"
-
 extensions:
   - type: builtin
     name: developer
@@ -43,6 +44,12 @@ extensions:
     name: analyze
     timeout: 300
     bundled: true
+  - type: stdio
+    name: code-graph
+    display_name: Code Graph
+    cmd: code-graph-mcp
+    args:
+    - serve
 
 prompt: |
   {% if context %}
