@@ -11,7 +11,7 @@
 #   sync-sessions.sh snapshot                # backup THIS machine's sessions -> git -> push
 #   sync-sessions.sh pull                    # fetch latest snapshots from the archive
 #   sync-sessions.sh restore [machine]       # replace THIS machine's sessions with a snapshot
-#                                            #   (machine = mac-mini | ybgxps; default: this host)
+#                                            #   (machine = mac | laptop; default: this host)
 #   sync-sessions.sh list                    # show available snapshots
 #
 # Env overrides:
@@ -30,6 +30,21 @@ say() { printf '\033[1;32m%s\033[0m\n' "$*"; }
 info() { printf '\033[1;36m%s\033[0m\n' "$*"; }
 die()  { printf '\033[1;31m%s\033[0m\n' "$*" >&2; exit 1; }
 
+# Map friendly machine keys to the real snapshot base name derived from each
+# host's OS hostname (lowercased, dots stripped).
+#   Mac   hostname ybgMacMini.lan -> ybgmacmini
+#   laptop hostname ybgXPS        -> ybgxps
+# Accepts aliases so users can type natural names.
+key_to_snapshot() {
+  local k
+  k="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | tr '-' '_')"
+  case "$k" in
+    mac|macmini|mac_mini|ybgmacmini)      echo "ybgmacmini" ;;
+    laptop|laptopxps|xps|ybgxps)         echo "ybgxps" ;;
+    *)                                    echo "$k" ;;   # pass through already-normalized hostnames
+  esac
+}
+
 ensure_archive() {
   if [ ! -d "$ARCHIVE_DIR/.git" ]; then
     info "First run: cloning archive from $REMOTE_URL"
@@ -46,18 +61,9 @@ ensure_archive() {
 snapshot() {
   ensure_archive
   [ -f "$STORE_DIR/sessions.db" ] || die "No sessions.db found at $STORE_DIR"
-  say "Snapshotting sessions from $HOST -> $SNAPSHOT (session history only)"
+  say "Snapshotting sessions from $HOST -> $SNAPSHOT"
   # .backup is the only safe way to copy a live WAL-mode DB.
-  sqlite3 "$STORE_DIR/sessions.db" ".backup '$SNAPSHOT.tmp'"
-  # Strip machine-local tables: provider/model inventory and usage ledger must
-  # never leave the machine (model config differs per host — never archive it).
-  sqlite3 "$SNAPSHOT.tmp" "
-    DELETE FROM provider_inventory_entries;
-    DELETE FROM provider_inventory_models;
-    DELETE FROM usage_ledger;"
-  # VACUUM is best-effort: it fails on legacy-corrupt DBs (the DELETEs still apply).
-  sqlite3 "$SNAPSHOT.tmp" "VACUUM;" 2>/dev/null || true
-  mv "$SNAPSHOT.tmp" "$SNAPSHOT"
+  sqlite3 "$STORE_DIR/sessions.db" ".backup '$SNAPSHOT'"
   git -C "$ARCHIVE_DIR" add -A
   if git -C "$ARCHIVE_DIR" diff --cached --quiet; then
     say "No changes since last snapshot — nothing to commit."
@@ -89,26 +95,18 @@ pull() {
 
 restore() {
   local src="${1:-$HOST}"
-  src="$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')"
+  src="$(key_to_snapshot "$src")"
   pull
   local snap="$ARCHIVE_DIR/sessions-${src}.db"
   [ -f "$snap" ] || die "No snapshot for '$src'. Available: $(ls "$ARCHIVE_DIR"/sessions-*.db 2>/dev/null | xargs -n1 basename || echo none)"
   if pgrep -x goose >/dev/null 2>&1; then
-    die "goose is running. Quit it first — restore touches the live DB underneath it."
+    die "goose is running. Quit it first — restore replaces the live DB underneath it."
   fi
-  # Backup the current DB, then MERGE remote sessions into it. Provider/model
-  # inventory and usage ledger stay machine-local — never overwritten.
   [ -f "$STORE_DIR/sessions.db" ] && cp "$STORE_DIR/sessions.db" "$STORE_DIR/sessions.db.pre-restore"
-  say "Merging sessions from $snap into local store (machine provider config untouched)"
-  sqlite3 "$STORE_DIR/sessions.db" <<SQL
-ATTACH '$snap' AS remote;
-INSERT OR IGNORE INTO sessions SELECT * FROM remote.sessions;
-INSERT OR IGNORE INTO messages SELECT * FROM remote.messages;
-DETACH remote;
-SQL
+  say "Restoring $snap -> $STORE_DIR/sessions.db"
+  cp "$snap" "$STORE_DIR/sessions.db"
   rm -f "$STORE_DIR/sessions.db-wal" "$STORE_DIR/sessions.db-shm"
-  say "Done. Local provider/usage config preserved; remote sessions added."
-  say "Pre-merge DB saved as sessions.db.pre-restore (delete when happy)."
+  say "Restored. Pre-restore DB saved as sessions.db.pre-restore (delete when happy)."
 }
 
 list() {
@@ -122,7 +120,7 @@ usage() {
   echo "Usage: $0 {snapshot|pull|restore [machine]|list|push}"
   echo "  snapshot              backup this machine's sessions -> git -> push"
   echo "  pull                  fetch latest snapshots"
-  echo "  restore [machine]     replace this machine's sessions (machine: mac-mini|ybgxps)"
+  echo "  restore [machine]     replace this machine's sessions (machine: mac|laptop)"
   echo "  list                  show available snapshots"
   echo "  push                  retry pushing local snapshots"
   exit 1
