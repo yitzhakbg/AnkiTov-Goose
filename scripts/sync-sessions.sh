@@ -107,6 +107,47 @@ restore() {
   cp "$snap" "$STORE_DIR/sessions.db"
   rm -f "$STORE_DIR/sessions.db-wal" "$STORE_DIR/sessions.db-shm"
   say "Restored. Pre-restore DB saved as sessions.db.pre-restore (delete when happy)."
+  # Foreign paths from the source machine will fail to load; fix them now.
+  remap_paths
+}
+
+# Rewrite sessions.working_dir to paths that exist ON THIS machine.
+# A synced DB carries the source machine's absolute paths (e.g. /Users/ybg/...
+# on a Mac) which the GUI rejects as "Invalid directory path". For each distinct
+# working_dir we walk up to the nearest existing ancestor; if none exists (e.g.
+# a foreign home), we fall back to $HOME. Content is untouched — only the path.
+remap_paths() {
+  local db="$STORE_DIR/sessions.db"
+  [ -f "$db" ] || die "No live DB at $db (run restore first)."
+  say "Remapping working_dir to local paths in $db"
+  cp "$db" "$db.pre-remap"
+  # sqlite3 -cmd '.read' runs a file; build one UPDATE per distinct path.
+  local tmp; tmp="$(mktemp)"
+  while IFS= read -r wd; do
+    [ -z "$wd" ] && continue
+    local target="" p="$wd"
+    if [ -d "$wd" ]; then
+      target="$wd"
+    else
+      # walk up to nearest existing ancestor
+      while [ -n "$p" ] && [ "$p" != "/" ]; do
+        if [ -d "$p" ]; then target="$p"; break; fi
+        p="$(dirname "$p")"
+      done
+      [ -z "$target" ] && target="$HOME"
+    fi
+    printf "UPDATE sessions SET working_dir='%s' WHERE working_dir='%s';\n" \
+      "${target//\'/\'\'}" "${wd//\'/\'\'}" >> "$tmp"
+  done < <(sqlite3 "$db" "SELECT DISTINCT working_dir FROM sessions ORDER BY working_dir;")
+  if [ -s "$tmp" ]; then
+    sqlite3 "$db" < "$tmp"
+    say "Remapped. Preview (working_dir -> count):"
+    sqlite3 "$db" "SELECT '  '||working_dir||'  ('||cnt||')' FROM (SELECT working_dir, COUNT(*) cnt FROM sessions GROUP BY working_dir ORDER BY cnt DESC);"
+    say "Pre-remap DB saved as sessions.db.pre-remap (delete when happy)."
+  else
+    say "Nothing to remap."
+  fi
+  rm -f "$tmp"
 }
 
 list() {
@@ -117,10 +158,12 @@ list() {
 }
 
 usage() {
-  echo "Usage: $0 {snapshot|pull|restore [machine]|list|push}"
+  echo "Usage: $0 {snapshot|pull|restore [machine]|remap|list|push}"
   echo "  snapshot              backup this machine's sessions -> git -> push"
   echo "  pull                  fetch latest snapshots"
   echo "  restore [machine]     replace this machine's sessions (machine: mac|laptop)"
+  echo "                        [auto-runs remap to fix foreign paths]"
+  echo "  remap                 rewrite working_dir to existing local paths"
   echo "  list                  show available snapshots"
   echo "  push                  retry pushing local snapshots"
   exit 1
@@ -130,6 +173,7 @@ case "${1:-}" in
   snapshot) snapshot ;;
   pull)     pull ;;
   restore)  restore "${2:-$HOST}" ;;
+  remap)    remap_paths ;;
   list)     list ;;
   push)     push ;;
   *)        usage ;;
