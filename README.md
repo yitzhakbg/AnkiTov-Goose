@@ -206,3 +206,11 @@ This keeps the repo portable across machines and directory layouts.
 ## License
 
 MIT — use freely, adapt as needed.
+---
+
+## 🐞 Filed upstream: Goose 1.38.0 "Network error: Could not connect to \<host\>:\<port\>" (custom LLM provider)
+
+A hard, non-recoverable connect failure to a custom / self-hosted OpenAI-compatible provider (my case: `qwen3.8-27b` on vLLM over Tailscale) that **only** a full app restart unblocks — even though `should_retry()` in `crates/goose/src/providers/retry.rs` lists `ProviderError::NetworkError(_)` as retryable.
+
+**Filed:** [#aaif-goose/goose#12416](https://github.com/aaif-goose/goose/issues/12416) (2026-09-21, by `yitzhakbg`)
+**Report copy:** [this repo, `bug-goose-network-error.md`](bug-goose-network-error.md) · [Gist](https://gist.github.com/yitzhakbg/5f1fa1aa21a5d480f55b93e3c0ffc14d)
