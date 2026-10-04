@@ -7,6 +7,13 @@
 #   writing the same DB = corruption. This script takes a *consistent* snapshot
 #   (sqlite3 .backup, safe even while goose is running) and distributes it via git.
 #
+# Why snapshots are compressed:
+#   The raw DB passed GitHub's 100MB hard file limit at ~187MB (328 sessions) and
+#   every push was rejected by the pre-receive hook (GH001). Snapshots are stored
+#   as sessions-<host>.db.zst instead — zstd -19 takes 187MB to ~36MB (5x), which
+#   keeps the plain-git workflow with years of headroom. Legacy uncompressed
+#   sessions-<host>.db snapshots are still accepted by restore/list.
+#
 # Usage:
 #   sync-sessions.sh snapshot                # backup THIS machine's sessions -> git -> push
 #   sync-sessions.sh pull                    # fetch latest snapshots from the archive
@@ -24,7 +31,34 @@ ARCHIVE_DIR="${GOOSE_SESSIONS_ARCHIVE:-$HOME/.goose-sessions-archive}"
 STORE_DIR="${GOOSE_SESSIONS_STORE:-$HOME/.local/share/goose/sessions}"
 REMOTE_URL="${GOOSE_SESSIONS_REMOTE:-https://github.com/yitzhakbg/AnkiTov-Sessions.git}"
 HOST="$( (hostname -s 2>/dev/null || hostname) | tr '[:upper:]' '[:lower:]' | sed 's/\.local$//' | sed 's/\.//g' )"
-SNAPSHOT="$ARCHIVE_DIR/sessions-${HOST}.db"
+SNAPSHOT="$ARCHIVE_DIR/sessions-${HOST}.db.zst"
+ZSTD_LEVEL="-${GOOSE_SESSIONS_ZSTD_LEVEL:-19}"
+
+# List snapshot files, compressed form first. Returns 0 even when there are none
+# so callers can distinguish "empty archive" from "ls failed on a glob".
+snapshot_files() {
+  local f
+  for f in "$ARCHIVE_DIR"/sessions-*.db.zst "$ARCHIVE_DIR"/sessions-*.db; do
+    [ -f "$f" ] && printf '%s\n' "$f"
+  done
+  return 0
+}
+
+need_zstd() {
+  command -v zstd >/dev/null 2>&1 \
+    || die "zstd is required to snapshot/restore compressed archives. Install: brew install zstd"
+}
+
+# Print the snapshot path for a machine key, preferring the compressed form and
+# falling back to the legacy raw .db so old archives keep working.
+snapshot_path() {
+  local host="$1"
+  if [ -f "$ARCHIVE_DIR/sessions-${host}.db.zst" ]; then
+    printf '%s' "$ARCHIVE_DIR/sessions-${host}.db.zst"
+  elif [ -f "$ARCHIVE_DIR/sessions-${host}.db" ]; then
+    printf '%s' "$ARCHIVE_DIR/sessions-${host}.db"
+  fi
+}
 
 say() { printf '\033[1;32m%s\033[0m\n' "$*"; }
 info() { printf '\033[1;36m%s\033[0m\n' "$*"; }
@@ -56,14 +90,43 @@ ensure_archive() {
       git -C "$ARCHIVE_DIR" config user.email >/dev/null 2>&1 || git -C "$ARCHIVE_DIR" config user.email "$(git config --get user.email || echo 'goose-sessions@localhost')"
     fi
   fi
+  # Keep the archive repo to compressed snapshots only. Uncompressed DBs breach
+  # GitHub's 100MB limit; WAL/SHM sidecars are runtime noise, never archive data.
+  # Merge (never overwrite) so a hand-maintained .gitignore keeps its entries.
+  local gi="$ARCHIVE_DIR/.gitignore"
+  touch "$gi"
+  grep -qxF '*.db' "$gi" || cat >> "$gi" <<'EOF'
+
+# --- sync-sessions.sh ---
+# Snapshots are stored compressed (sessions-<host>.db.zst): a raw 187MB DB was
+# rejected by GitHub's 100MB hard limit (GH001). Never commit an uncompressed DB.
+*.db
+# Interrupted .backup leftovers — never archive data.
+*.tmp-*
+EOF
 }
 
 snapshot() {
   ensure_archive
+  need_zstd
   [ -f "$STORE_DIR/sessions.db" ] || die "No sessions.db found at $STORE_DIR"
   say "Snapshotting sessions from $HOST -> $SNAPSHOT"
-  # .backup is the only safe way to copy a live WAL-mode DB.
-  sqlite3 "$STORE_DIR/sessions.db" ".backup '$SNAPSHOT'"
+  local raw; raw="$(mktemp -t goose-sessions-raw)"
+  # .backup is the only safe way to copy a live WAL-mode DB. The raw copy stays
+  # outside the archive repo so git never sees the uncompressed 100MB+ blob.
+  sqlite3 "$STORE_DIR/sessions.db" ".backup '$raw'"
+  local compressed; compressed="$(mktemp -t goose-sessions-zst)"
+  zstd "$ZSTD_LEVEL" -f -q "$raw" -o "$compressed" 2>/dev/null \
+    || die "zstd compression failed"
+  mv -f "$compressed" "$SNAPSHOT"
+  rm -f "$raw"
+  say "  $(basename "$SNAPSHOT"): $(du -h "$SNAPSHOT" | cut -f1) (raw was $(du -h "$STORE_DIR/sessions.db" | cut -f1))"
+  # A legacy raw snapshot for this host would be re-committed by `add -A` and
+  # blow the GitHub 100MB limit again. Drop it; history keeps the old blob.
+  if [ -f "$ARCHIVE_DIR/sessions-${HOST}.db" ]; then
+    info "Removing legacy uncompressed snapshot sessions-${HOST}.db"
+    rm -f "$ARCHIVE_DIR/sessions-${HOST}.db"
+  fi
   git -C "$ARCHIVE_DIR" add -A
   if git -C "$ARCHIVE_DIR" diff --cached --quiet; then
     say "No changes since last snapshot — nothing to commit."
@@ -71,11 +134,16 @@ snapshot() {
   fi
   git -C "$ARCHIVE_DIR" commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ) from $HOST"
   say "Committed. Pushing to origin..."
-  if git -C "$ARCHIVE_DIR" push origin HEAD 2>/dev/null; then
+  # Surface git's stderr — the old `2>/dev/null` hid the real reason (a 100MB+
+  # blob gets rejected by GitHub's pre-receive hook with no hint on our side).
+  local err; err="$(mktemp -t goose-sessions-pusherr)"
+  if git -C "$ARCHIVE_DIR" push origin HEAD 2>"$err"; then
     say "Pushed. Remote now has: $(git -C "$ARCHIVE_DIR" ls-remote --get-url origin)"
   else
-    info "Push failed (offline / auth). Snapshot is safe locally — retry later with: $0 push"
+    info "Push failed. Snapshot is safe locally — retry later with: $0 push"
+    [ -s "$err" ] && sed 's/^/  /' "$err"
   fi
+  rm -f "$err"
 }
 
 push() {
@@ -97,14 +165,22 @@ restore() {
   local src="${1:-$HOST}"
   src="$(key_to_snapshot "$src")"
   pull
-  local snap="$ARCHIVE_DIR/sessions-${src}.db"
-  [ -f "$snap" ] || die "No snapshot for '$src'. Available: $(ls "$ARCHIVE_DIR"/sessions-*.db 2>/dev/null | xargs -n1 basename || echo none)"
+  local snap avail; snap="$(snapshot_path "$src")"
+  avail="$(snapshot_files | xargs -n1 basename | tr '\n' ' ')"
+  [ -n "$avail" ] || avail="none"
+  [ -n "$snap" ] && [ -f "$snap" ] || die "No snapshot for '$src'. Available: $avail"
   if pgrep -x goose >/dev/null 2>&1; then
     die "goose is running. Quit it first — restore replaces the live DB underneath it."
   fi
   [ -f "$STORE_DIR/sessions.db" ] && cp "$STORE_DIR/sessions.db" "$STORE_DIR/sessions.db.pre-restore"
-  say "Restoring $snap -> $STORE_DIR/sessions.db"
-  cp "$snap" "$STORE_DIR/sessions.db"
+  say "Restoring $(basename "$snap") -> $STORE_DIR/sessions.db"
+  if [ "${snap%.zst}" != "$snap" ]; then
+    need_zstd
+    zstd -d -f -q "$snap" -o "$STORE_DIR/sessions.db" \
+      || die "zstd decompression failed for $snap"
+  else
+    cp "$snap" "$STORE_DIR/sessions.db"
+  fi
   rm -f "$STORE_DIR/sessions.db-wal" "$STORE_DIR/sessions.db-shm"
   say "Restored. Pre-restore DB saved as sessions.db.pre-restore (delete when happy)."
   # Foreign paths from the source machine will fail to load; fix them now.
@@ -153,13 +229,20 @@ remap_paths() {
 list() {
   pull 2>/dev/null || true
   say "Snapshots available in $ARCHIVE_DIR:"
-  ls -lh "$ARCHIVE_DIR"/sessions-*.db 2>/dev/null | awk '{print "  "$NF" ("$5") — "$6" "$7" "$8}' \
-    || say "  none yet — run '$0 snapshot' on a machine"
+  local found f
+  found="$(snapshot_files)"
+  if [ -z "$found" ]; then
+    say "  none yet — run '$0 snapshot' on a machine"
+    return 0
+  fi
+  while IFS= read -r f; do
+    [ -n "$f" ] && printf '  %s (%s)\n' "$(basename "$f")" "$(du -h "$f" | cut -f1)"
+  done <<< "$found"
 }
 
 usage() {
   echo "Usage: $0 {snapshot|pull|restore [machine]|remap|list|push}"
-  echo "  snapshot              backup this machine's sessions -> git -> push"
+  echo "  snapshot              backup this machine's sessions -> zstd -> git -> push"
   echo "  pull                  fetch latest snapshots"
   echo "  restore [machine]     replace this machine's sessions (machine: mac|laptop)"
   echo "                        [auto-runs remap to fix foreign paths]"
