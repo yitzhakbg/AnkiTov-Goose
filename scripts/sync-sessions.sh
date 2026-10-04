@@ -44,6 +44,13 @@ snapshot_files() {
   return 0
 }
 
+# Portable temp file. BSD mktemp (macOS) takes a bare prefix with -t, but GNU
+# mktemp (Linux) treats -t as a template and demands XXXXXX — so use an explicit
+# template instead, which both accept.
+tmpfile() {
+  mktemp "${TMPDIR:-/tmp}/$1.XXXXXX"
+}
+
 need_zstd() {
   command -v zstd >/dev/null 2>&1 \
     || die "zstd is required to snapshot/restore compressed archives. Install: brew install zstd"
@@ -111,11 +118,11 @@ snapshot() {
   need_zstd
   [ -f "$STORE_DIR/sessions.db" ] || die "No sessions.db found at $STORE_DIR"
   say "Snapshotting sessions from $HOST -> $SNAPSHOT"
-  local raw; raw="$(mktemp -t goose-sessions-raw)"
+  local raw; raw="$(tmpfile goose-sessions-raw)"
   # .backup is the only safe way to copy a live WAL-mode DB. The raw copy stays
   # outside the archive repo so git never sees the uncompressed 100MB+ blob.
   sqlite3 "$STORE_DIR/sessions.db" ".backup '$raw'"
-  local compressed; compressed="$(mktemp -t goose-sessions-zst)"
+  local compressed; compressed="$(tmpfile goose-sessions-zst)"
   zstd "$ZSTD_LEVEL" -f -q "$raw" -o "$compressed" 2>/dev/null \
     || die "zstd compression failed"
   mv -f "$compressed" "$SNAPSHOT"
@@ -136,7 +143,7 @@ snapshot() {
   say "Committed. Pushing to origin..."
   # Surface git's stderr — the old `2>/dev/null` hid the real reason (a 100MB+
   # blob gets rejected by GitHub's pre-receive hook with no hint on our side).
-  local err; err="$(mktemp -t goose-sessions-pusherr)"
+  local err; err="$(tmpfile goose-sessions-push)"
   if git -C "$ARCHIVE_DIR" push origin HEAD 2>"$err"; then
     say "Pushed. Remote now has: $(git -C "$ARCHIVE_DIR" ls-remote --get-url origin)"
   else
@@ -198,7 +205,7 @@ remap_paths() {
   say "Remapping working_dir to local paths in $db"
   cp "$db" "$db.pre-remap"
   # sqlite3 -cmd '.read' runs a file; build one UPDATE per distinct path.
-  local tmp; tmp="$(mktemp)"
+  local tmp; tmp="$(tmpfile goose-sessions-remap)"
   while IFS= read -r wd; do
     [ -z "$wd" ] && continue
     local target="" p="$wd"
