@@ -149,7 +149,16 @@ cmd_capture() {
   done
   tar -cf "$DEST/goose-data.tar" -C "$STAGE" . && rm -rf "$STAGE"
   if [ "$LIGHT" = 1 ]; then warn "3/7 opencode SKIPPED (--light)"; else
-    step "3/7 opencode config"; tar -cf "$DEST/opencode.tar" -C "$HOME/.config" ${TAR_OPTS[@]+"${TAR_OPTS[@]}"} opencode 2>/dev/null || warn "no ~/.config/opencode"
+    step "3/7 opencode config"
+    # opencode credentials live in ~/.local/share/opencode/auth.json, NOT ~/.config/opencode
+    # capture both with $HOME-relative paths so a single `tar -xf -C $HOME` restores to the right places
+    oc_args=(.config/opencode)
+    if [ -f "$HOME/.local/share/opencode/auth.json" ]; then
+      oc_args+=(.local/share/opencode/auth.json)
+    else
+      warn "opencode auth.json absent — manual re-auth will be needed after restore"
+    fi
+    tar -cf "$DEST/opencode.tar" -C "$HOME" ${TAR_OPTS[@]+"${TAR_OPTS[@]}"} "${oc_args[@]}" 2>/dev/null || warn "no ~/.config/opencode"
   fi
   step "4/7 gbrain wrappers from ~/.bun/bin (bun itself NOT captured — reinstall)"
   mkdir -p "$DEST/bun-gbrain"
@@ -240,7 +249,7 @@ sys.stdout.buffer.write(b"\0".join(out))' \
 DEST=$DEST
 - goose-config.tar   — ~/.config/goose (config, secrets.yaml, custom_providers, memory, .headroom, recipes)
 - goose-data.tar     — ~/.local/share/goose minus sessions (+ volatile /tmp-backed projects/schedule json as REAL files)
-- opencode.tar       — ~/.config/opencode $([ "$LIGHT" = 1 ] && echo "(SKIPPED --light)")
+- opencode.tar       — ~/.config/opencode + ~/.local/share/opencode/auth.json (opencode credentials) $([ "$LIGHT" = 1 ] && echo "(SKIPPED --light)")
 - bun-gbrain/        — gbrain-mcp wrapper(s) + .gbrain-owner.json
 - launchd/ crontab.txt mutagen-sessions.txt mutagen-restore.sh
 - repos.tsv          — clone list: AnkiTov, AnkiTov-Goose (+SHA), ankitov-goose-state.tar for AnkiTov/.goose
@@ -292,7 +301,12 @@ cmd_restore() {
   done
   ok "restored ~/.local/share/goose (sessions/ untouched)"
   step "5/8 opencode"
-  [ -f "$B/opencode.tar" ] && tar -xf "$B/opencode.tar" -C "$HOME/.config" && ok "opencode restored" || warn "no opencode.tar in bundle"
+  if [ -f "$B/opencode.tar" ]; then
+    [ -f "$HOME/.local/share/opencode/auth.json" ] && cp -p "$HOME/.local/share/opencode/auth.json" "$HOME/.local/share/opencode/auth.json.pre-restore.$(date +%s)" || true
+    tar -xf "$B/opencode.tar" -C "$HOME" && ok "opencode restored (config + auth.json if bundled)" || warn "opencode.tar extract failed"
+  else
+    warn "no opencode.tar in bundle"
+  fi
   step "6/8 gbrain wrappers"
   if [ -d "$B/bun-gbrain" ] && ls "$B"/bun-gbrain/gbrain* >/dev/null 2>&1; then
     mkdir -p ~/.bun/bin; cp -p "$B"/bun-gbrain/gbrain* ~/.bun/bin/ && chmod +x ~/.bun/bin/gbrain* 2>/dev/null || true
