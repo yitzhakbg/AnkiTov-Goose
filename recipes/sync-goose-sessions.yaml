@@ -38,8 +38,8 @@ instructions: |
 
   Notes:
   - Never rsync the workspace — mutagen owns it (ankitov-goose 2-way session).
-  - Config (custom_providers/, memory/, buzz agents/harnesses) syncs separately
-    via goose-buzz-sync.sh (Mac->laptop) and goose-sync-reverse.sh (laptop->Mac).
+  - Config (custom_providers/, memory/, machine-specific agents/harnesses) syncs
+    separately via local sync helpers (Mac->laptop and laptop->Mac).
   - Backups sessions.db.pre-restore / sessions.db.pre-remap remain in the live
     dir; tell the user they can delete them once satisfied.
   - Full reference: docs/GOOSE-SYNC.md

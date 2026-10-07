@@ -60,10 +60,8 @@ bash scripts/sync-sessions.sh pull     # just fetch latest snapshots
   underneath. (The script checks and refuses if Goose is running.)
 - Backups: `sessions.db.pre-restore` and `sessions.db.pre-remap` are saved in the
   live dir each time. Delete when happy.
-- **Config** (`custom_providers/`, `memory/`, buzz agents/harnesses) syncs
-  separately — NOT via this script:
-  - Mac → laptop: `~/.local/bin/goose-buzz-sync.sh`
-  - Laptop → Mac: `~/.local/bin/goose-sync-reverse.sh --update`
+- **Config** (`custom_providers/`, `memory/`, machine-specific agents/harnesses) syncs
+  separately — NOT via this script (local sync helpers in `~/.local/bin`).
 - **Workspace** is owned by **mutagen** (`ankitov-goose` 2-way session). Never
   rsync it — it causes Repo A / Repo B cross-contamination.
 - **Repo A (`AnkiTov`, full dev)** and **Repo B (`AnkiTov-goose`, lightweight)**
