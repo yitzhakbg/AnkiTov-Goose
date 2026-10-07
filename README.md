@@ -50,12 +50,14 @@ ankitov-goose/
 ├── custom_providers/              Custom LLM provider definitions
 │   └── custom_agnes.json          Agnes AI provider
 ├── recipes/                       System-level Goose recipes
-│   ├── automated-video-generator-review.yaml
-│   ├── gbrain-reminder.yaml
-│   └── topcoat-review.yaml
-├── scheduled_recipes/             Cron-triggered recipe jobs
-│   ├── agent_created_*.yaml       10 scheduled tasks
-│   └── goose-openclaw-alternatives.yaml
+│   ├── ankitov-design.yaml
+│   ├── ankitov-plan.yaml
+│   ├── ankitov-research.yaml
+│   ├── ankitov-windmill-reminder.yaml
+│   ├── sync-goose-sessions.yaml
+│   └── update-playground-profiles.yaml
+├── scheduled_recipes/             Cron-triggered AnkiTov recipe jobs
+│   └── agent_created_*.yaml
 ├── apps/                          Goose HTML apps
 │   ├── ankitov-management-console.html
 │   ├── ankitov-management-console-v2.html

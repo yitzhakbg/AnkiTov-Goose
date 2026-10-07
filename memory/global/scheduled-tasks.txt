@@ -1,12 +1,5 @@
-# scheduled video-generator rust monthly-review
-Scheduled: automated-video-generator-review — monthly on 17th at midnight. Recipe at /Users/ybg/.local/share/goose/recipes/automated-video-generator-review.yaml. References: Gemini share link + Google Doc about automated video generator in Rust. Job ID: agent_created_1784271159. First run: August 17, 2026.
-
 STATUS: PENDING — blocked on i18n translations completion
 
 Scope: Add POST /api/v1/management/students/import-file endpoint supporting CSV, TSV, and .xlsx uploads. Backend parses with `csv` + `calamine` crates, validates rows, and reuses existing bulk-enroll insert-or-skip logic. GUI gets an "Import from File" button in Class → Roster with a drag-drop modal. ~8 hr effort.
 
 Gate checklist: (1) All 8 locale .ftl files final, (2) validate_i18n.py updated, (3) import keys in every locale, (4) JSON locale files regenerated, (5) spec reviewed, (6) implementation scheduled.
-
-# topcoat research framework-review
-TopCoat Review scheduled for October 20, 2026 at 14:00. Recipe at /Users/ybg/.local/share/goose/recipes/topcoat-review.yaml. Reviews TopCoat (https://github.com/tokio-rs/topcoat) — a batteries-included web framework for Rust on tokio. Compares with Loco.rs for AnkiTov fit. Job ID: agent_created_1784538466. Cron: 0 14 20 10 * (Oct 20, 14:00).
-
