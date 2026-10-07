@@ -12,7 +12,7 @@
 
 ## Overview
 
-The [AnkiTov](https://github.com/ankitov/ankitov) backend is a Rust-native knowledge retention infrastructure built with Loco.rs, SeaORM, and libSQL. This repository captures **everything Goose-related** about the AnkiTov development environment so you can reconstruct your full setup on a new machine in minutes.
+The [AnkiTov](https://github.com/yitzhakbg/AnkiTov) backend is a Rust-native knowledge retention infrastructure built with Loco.rs, SeaORM, and libSQL. This repository captures **everything Goose-related** about the AnkiTov development environment so you can reconstruct your full setup on a new machine in minutes.
 
 Combined with the AnkiTov source repo, a single `bootstrap.sh` run:
 
@@ -85,10 +85,10 @@ ankitov-goose/
 | **Scheduled recipes** | `~/.local/share/goose/scheduled_recipes/` | This repo |
 | **Goose apps** | `~/.local/share/goose/apps/` | This repo |
 | **Job registry** | `~/.local/share/goose/schedule.json` | This repo (templated) |
-| **Project config** | `ankitov/goose_config.yaml` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
-| **AnkiTov slash commands** | `ankitov/recipes/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
-| **Summon subagents** | `ankitov/.goose/recipes/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
-| **Project memory** | `ankitov/.goose/memory/` | [AnkiTov repo](https://github.com/ankitov/ankitov) |
+| **Project config** | `ankitov/goose_config.yaml` | [AnkiTov repo](https://github.com/yitzhakbg/AnkiTov) |
+| **AnkiTov slash commands** | `ankitov/recipes/` | [AnkiTov repo](https://github.com/yitzhakbg/AnkiTov) |
+| **Summon subagents** | `ankitov/.goose/recipes/` | [AnkiTov repo](https://github.com/yitzhakbg/AnkiTov) |
+| **Project memory** | `ankitov/.goose/memory/` | [AnkiTov repo](https://github.com/yitzhakbg/AnkiTov) |
 | **Budget gate binary** | `ankitov/ankitov-budget-gate/target/release/` | Compiled locally (arch-specific) |
 
 ## Quick Start
@@ -96,15 +96,15 @@ ankitov-goose/
 ### Prerequisites
 
 - [Goose CLI](https://github.com/block/goose) installed (`brew install goose` or `cargo install goose`)
-- [AnkiTov repo](https://github.com/ankitov/ankitov) cloned locally
+- [AnkiTov repo](https://github.com/yitzhakbg/AnkiTov) cloned locally
 - API keys for your configured providers (set as environment variables)
 
 ### Setup
 
 ```bash
 # 1. Clone both repos
-git clone https://github.com/ankitov/ankitov.git
-git clone https://github.com/ankitov/ankitov-goose.git
+git clone https://github.com/yitzhakbg/AnkiTov.git
+git clone https://github.com/yitzhakbg/AnkiTov-Goose.git
 
 # 2. Bootstrap (auto-detects architecture)
 cd ankitov-goose

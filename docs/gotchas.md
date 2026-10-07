@@ -1,3 +1,8 @@
+---
+type: note
+title: AnkiTov Gotchas — Common AI Failure Points
+---
+
 # AnkiTov Gotchas — Common AI Failure Points
 
 > This file grows over time. Every time Goose gets something wrong, add it here.

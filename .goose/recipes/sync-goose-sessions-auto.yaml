@@ -1,0 +1,149 @@
+version: "1.0.0"
+title: "Sync Goose Sessions (auto, via SSH)"
+description: >
+  Keep the Goose sessions DB in sync between this machine (the Mac, ybgmacmini)
+  and the ybgxps laptop over SSH, with no direction argument. Stops any running
+  goose on the target machine, compares the newest chat (MAX(updated_at) in the
+  sessions table) on both sides, and pushes the newer side to the older one using
+  the git-backed zstd snapshots in scripts/sync-sessions.sh. Verifies both sides
+  end at the same session count.
+instructions: |
+  Two-way auto-sync of Goose chat sessions between this Mac and the ybgXPS
+  laptop. Direction is DECIDED BY DATA, not asked for.
+
+  Host constants (already in ~/.ssh/config on the Mac):
+    LAPTOP=ybgxps        # alias; User ybg, IdentityFile ~/.ssh/id_ed25519_4_AnkiTov
+    LAPTOP_ADDR=ybg@100.68.132.81   # tailscale fallback if the alias fails
+  Script (identical on both machines, mutagen-synced):
+    ~/AnkiTov-goose/scripts/sync-sessions.sh
+    subcommands: snapshot | pull | restore <mac|laptop> | remap | list | push
+  DB path on both machines:
+    ~/.local/share/goose/sessions/sessions.db
+
+  Direction is always decided from the data (Step 2). This recipe is
+  PARAMETERLESS by design so `goose run --recipe` and the scheduler accept it
+  directly — a recipe that declares a parameter is rejected as "Unnecessary
+  parameter definitions" on the direct run path.
+
+  ## Step 0 — Preflight
+
+    ssh -o BatchMode=yes -o ConnectTimeout=10 ybgxps 'hostname'
+  If that fails, retry with ybg@100.68.132.81. If the laptop is unreachable,
+  STOP and report — do not snapshot into a half-synced state.
+  Confirm zstd exists on both ends (`command -v zstd`); snapshot/restore needs it.
+
+  ## Step 1 — Stop goose on the TARGET side
+
+  The script hard-refuses to restore while goose is running
+  (`pgrep -x goose` -> "goose is running. Quit it first"), because restore
+  replaces the live DB underneath it.
+
+  Kill goose on the LAPTOP over SSH (this never affects the machine you are on):
+
+    ssh -o BatchMode=yes ybgxps \
+      'pkill -x goose 2>/dev/null; pkill -f "goose serve" 2>/dev/null; sleep 1; \
+       pgrep -x goose >/dev/null && echo "STILL RUNNING" || echo "stopped"'
+
+  ⚠️ SELF-KILL HAZARD — this recipe runs INSIDE goose. If the direction
+  resolves to "the laptop is newer, update the Mac", restoring locally means
+  replacing the DB of the very goose process executing this recipe. Do NOT
+  pkill the local goose mid-run; you would kill your own session before the
+  push could be verified. Handle it this way instead:
+
+    - If the laptop is newer: snapshot + push from the laptop over SSH, then
+      STOP and tell the user to quit goose on the Mac and run
+      `bash ~/AnkiTov-goose/scripts/sync-sessions.sh restore laptop` themselves.
+      Offer to do it for them once this session ends.
+    - Only if the user has explicitly asked for a headless/detached run
+      (i.e. the user explicitly asked for a forced headless run) may you kill the local goose and
+      continue via a detached shell (nohup ... &) so the work survives.
+
+  ## Step 2 — Compare which side has the newer chats
+
+  Run on BOTH machines. The newest row wins; equal means no sync needed.
+
+    LOCAL=$(sqlite3 ~/.local/share/goose/sessions/sessions.db \
+      "SELECT COUNT(*)||'|'||COALESCE(MAX(updated_at),'') FROM sessions")
+    REMOTE=$(ssh -o BatchMode=yes ybgxps \
+      "sqlite3 ~/.local/share/goose/sessions/sessions.db \
+       \"SELECT COUNT(*)||'|'||COALESCE(MAX(updated_at),'') FROM sessions\"")
+
+  Parse each as count|newest. Compare the timestamp strings (both are
+  "YYYY-MM-DD HH:MM:SS" in the same timezone, so lexical compare is valid).
+
+  Decision table:
+    local newest  > remote newest -> Mac is source, update the LAPTOP
+    local newest  < remote newest -> Laptop is source, update the MAC (see hazard)
+    equal timestamps              -> already in sync; report and do nothing
+
+  Report the two counts and both timestamps before acting, so the user can see
+  why you chose that direction.
+
+  ## Step 3 — Snapshot + push from the source
+
+  Source = Mac:
+    cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot
+
+  Source = Laptop:
+    ssh -o BatchMode=yes ybgxps 'cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh snapshot'
+
+  snapshot = sqlite3 .backup -> zstd -19 -> git commit -> push. Verify it
+  actually pushed: the script prints "Pushed." on success and surfaces git's
+  stderr on failure. A silent failure here means the next restore is stale —
+  treat "Push failed" as a hard stop and report the git error verbatim.
+  Snapshots are sessions-<host>.db.zst (the raw DB exceeds GitHub's 100 MB
+  limit, so never expect a raw .db).
+
+  ## Step 4 — Restore on the older side
+
+  Update the LAPTOP (normal case, safe to do yourself):
+
+    ssh -o BatchMode=yes ybgxps \
+      'cd ~/AnkiTov-goose && bash scripts/sync-sessions.sh restore mac'
+
+  Update the MAC: defer to the user (see the hazard in Step 1). The command
+  for them is `bash ~/AnkiTov-goose/scripts/sync-sessions.sh restore laptop`.
+
+  restore auto-pulls the newest snapshot, decompresses it over sessions.db,
+  removes stale -wal/-shm sidecars, keeps a sessions.db.pre-restore copy, and
+  auto-runs `remap` to rewrite each session's working_dir to the nearest
+  existing local path (or $HOME) so foreign paths don't fail to load.
+
+  ## Step 5 — Verify both sides agree
+
+    sqlite3 ~/.local/share/goose/sessions/sessions.db \
+      "SELECT COUNT(*)||' sessions, newest '||MAX(updated_at) FROM sessions"
+    ssh -o BatchMode=yes ybgxps \
+      "sqlite3 ~/.local/share/goose/sessions/sessions.db \
+       \"SELECT COUNT(*)||' sessions, newest '||MAX(updated_at) FROM sessions\""
+
+  Both should report the same count and the same newest timestamp. Also run
+  `PRAGMA quick_check` on the restored DB and confirm it returns `ok`.
+  If counts differ, report both numbers plainly rather than retrying blindly.
+
+  ## Notes
+
+  - This is a whole-DB sync, last-writer-wins. It does NOT merge two divergent
+    histories: whichever side is newer replaces the other wholesale, so chats
+    that exist ONLY on the older side and were never on the newer side will be
+    lost from that machine. Say so when the counts differ.
+  - Never two-way sync the live sessions dir with mutagen — that corrupts a WAL
+    SQLite DB. mutagen only carries the script and config.
+  - `restore` leaves sessions.db.pre-restore in the live dir. Tell the user it
+    is safe to delete once they are satisfied.
+  - Reference: docs/GOOSE-SYNC.md
+
+extensions:
+  - type: builtin
+    name: developer
+    timeout: 600
+    bundled: true
+
+settings:
+  max_turns: 60
+
+prompt: |
+  Auto-sync Goose sessions between the Mac and ybgxps over SSH. Compare
+  MAX(updated_at) on both sides and push the newer side to the older one. Stop goose on the target machine first,
+  compare, snapshot+push from the source, restore on the older side, then verify
+  both sides report the same session count and timestamp.

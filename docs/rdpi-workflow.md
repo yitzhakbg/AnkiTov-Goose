@@ -1,3 +1,8 @@
+---
+type: note
+title: AnkiTov RDPI Workflow — Research → Design → Plan → Implement
+---
+
 # AnkiTov RDPI Workflow — Research → Design → Plan → Implement
 
 Adapted from Goose's [RPI](https://goose-docs.ai/docs/tutorials/rpi) pattern

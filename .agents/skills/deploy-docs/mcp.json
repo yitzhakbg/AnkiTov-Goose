@@ -1,0 +1,12 @@
+{
+  "mintlify-deploy": {
+    "command": "npx",
+    "args": ["-y", "mintlify@latest", "deploy"],
+    "includeTools": ["deploy"]
+  },
+  "scalar-validate": {
+    "command": "npx",
+    "args": ["-y", "@scalar/cli", "validate", "backend/openapi.json"],
+    "includeTools": ["validate"]
+  }
+}

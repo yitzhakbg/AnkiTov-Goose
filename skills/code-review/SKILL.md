@@ -30,12 +30,47 @@ For focused review, use `jj diff` on the current change.
 Use `analyze` extension for structure, `codegraph` for call graphs.
 Check each file against the checklist below.
 
-### 3. Run verification
+### 3. Run verification — BOTH harnesses, in order, no exceptions
+
+**This is a hard gate, not a suggestion.** A change that touches the backend
+(`backend/`) is NOT "done" until **both** independent harnesses pass. Do not
+report a backend change as complete on Harness 1 alone. See `specs/double-harness.md`.
+
+**Harness 1 — Rust, white-box, in-process** (always):
 ```bash
 cd backend && cargo check 2>&1
 cargo nextest run 2>&1
 cd ../ankitov-budget-gate && cargo check 2>&1
 ```
+If Harness 1 fails, STOP — do not run Harness 2, fix the in-process failures first.
+
+**Harness 2 — Python, black-box over HTTP** (always, right after a green Harness 1):
+```bash
+scripts/harness2/run_all.sh
+```
+This starts a real dev server (port 5150), runs the 22 black-box suites against
+`/api/v1`, shuts the server down, and writes two reports to `project-knowledge/`:
+`YYYY-MM-DD-double-harness-combined.md` and `YYYY-MM-DD-double-harness-results.md`.
+
+**Interpreting Harness 2's exit code:**
+- `0` → both harnesses green. Change is **done**.
+- `1` → at least one suite FAILED. Change is **NOT done** — triage per the
+  "Failure triage" section of `specs/double-harness.md`. A 5xx is a real bug;
+  a 4xx means the expectation or the contract is wrong.
+- `2` → a prerequisite was missing (server couldn't start / unreachable). This is
+  an **environment** problem, not a test failure — report it, fix the env, re-run.
+  Do not let exit 2 be waved through as "passed."
+
+**SKIP is not FAIL.** Suites that target not-yet-built features (NL-ops
+`/management/act`, AnkiConnect Tier B) report ⏭️ SKIP with a reason. Skips keep
+the harness green and are expected — they are never a reason to skip running
+Harness 2, and they must be *explained in the report*, not silently passed over.
+
+**When Harness 2 is NOT required:** a change that touches ONLY non-backend
+surfaces (e.g. pure marketing-site `specs/launch/site/`, outreach docs, i18n
+locale JSONs with no endpoint change) does not change the API contract, so a
+black-box run adds no signal. Still run Harness 1. Use judgment, but when in
+doubt — especially for any `backend/` change — run both.
 
 ### 4. Produce the review
 Group findings by priority. Each finding must include:
@@ -67,6 +102,12 @@ Group findings by priority. Each finding must include:
 ## AnkiTov-Specific Rules
 
 - `cargo nextest run` — NEVER use `cargo test`
+- **Double-harness gate:** any change touching `backend/` MUST pass BOTH
+  `cargo nextest` (Harness 1) AND `scripts/harness2/run_all.sh` (Harness 2,
+  black-box over HTTP) before it is reported as done. Never "done" on Harness 1
+  alone. Harness 2 exit code 2 = environment problem (report + fix env), 1 =
+  real failure, 0 = green. SKIP suites are expected and never a reason to skip
+  the run. Full spec: `specs/double-harness.md`.
 - `jj` — NEVER use `git` commands
 - `bash` — NEVER use `zsh` in shell scripts
 - `set -euo pipefail` — required in all shell scripts

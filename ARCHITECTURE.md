@@ -104,8 +104,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 brew install goose
 
 # 4. Clone repos
-git clone https://github.com/ankitov/ankitov.git ~/ankitov
-git clone https://github.com/ankitov/ankitov-goose.git ~/ankitov-goose
+git clone https://github.com/yitzhakbg/AnkiTov.git ~/ankitov
+git clone https://github.com/yitzhakbg/AnkiTov-Goose.git ~/ankitov-goose
 
 # 5. Rebuild budget gate (MUST be compiled for Intel)
 cd ~/ankitov/ankitov-budget-gate && cargo build --release
@@ -124,3 +124,60 @@ export GOOSE_TOOLSHIM=true
 # 9. Verify
 cd ~/ankitov && cargo check && goose session -r
 ```
+
+---
+
+## AnkiTov i18n & local install (integration notes)
+
+Cross-repo integration notes for the harness team. The product-side
+reference is `ankitov/docs/ankitov-i18n-and-local-deploy.md`; this section is
+the **harness-side** mirror. The one item the harness *owns* is called out
+explicitly at the end.
+
+### The standing i18n rule
+*Every GUI-affecting string is translated into every supported language.*
+EN is the source of truth. AnkiTov has two independent i18n surfaces that
+both enforce this:
+
+- **Landing site (static):** source of truth is
+  `ankitov/specs/launch/site/translations.csv` (13 language columns, `en`
+  canonical). `build-site-i18n.py` compiles it to
+  `locales/*.json` and is the **strict publish gate** (fails on a missing
+  key, empty cell, or mojibake/mixed-script). `TRANSLATION_STATUS.md` is the
+  DRAFT → VERIFIED cultural-QA gate; until a locale is VERIFIED the site
+  serves it with **EN fallback** (`site-i18n.js`) so nothing renders blank.
+- **Backend / dashboard (Rust):** one `backend/i18n/{locale}/main.ftl` per
+  locale (13), compiled at build time by `fluent-templates static_loader!` in
+  `backend/src/i18n.rs`; runtime override via `POST /api/v1/locale/set`;
+  `is_rtl()` drives mirrored layout for RTL locales.
+
+If a new GUI string is added to AnkiTov, it must be added to **both** the
+landing CSV and the relevant `.ftl`, in all 13 languages, or the gate fails.
+
+### One-click local install
+`ankitov/install-locally.sh` (+ `docker-compose.local.yml`,
+`.env.local.example`) brings up the whole stack **inside Docker on the
+adopter's own `127.0.0.1`** — no domain, no cert, no Caddy, nothing exposed.
+The adopter opens `http://localhost:5150`. `stop` / `wipe` subcommands manage
+it. The static landing is shipped separately as a bundle
+(`ankitov/scripts/launch/build-local-bundle.sh` →
+`ankitov-local-bundle.tar.gz` → Cloudflare Pages `/ankitov-local/`), per
+`ankitov/specs/launch/site/LOCAL-BUNDLE-DEPLOY.md`.
+
+### Self-registration (no email to us)
+`POST /api/v1/auth/register` is public. The role gate in
+`ankitov/backend/src/controllers/auth.rs` allows self-signup for
+**`student`** or **`teacher`** only; **`admin` is deliberately excluded**
+(provisioned out-of-band by the operator). Unknown roles fall back to
+`student`; `admin` returns a 400. This is the privilege-escalation gate —
+nobody can self-promote to admin through the public endpoint.
+
+### ⚠ Harness-owned: the Goose-paste `Content-Type` coercion
+When a teacher pastes a deck from **Anki / Notion / Google Sheets** into the
+import UI, the clipboard can arrive with an unexpected `Content-Type` and
+the paste silently fails to bind. **The fix — a `Content-Type` coercion in
+the paste handler (normalize the incoming content type before parsing the
+paste payload) — belongs in THIS harness's paste path, not in the AnkiTov
+product backend.** The product stays content-agnostic; the harness owns
+clipboard/paste normalization. Do not move this logic into
+`ankitov/backend/`; wire it into the Goose paste handler.

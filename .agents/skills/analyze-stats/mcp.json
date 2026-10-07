@@ -1,0 +1,6 @@
+{
+  "anki-mcp-read": {
+    "url": "https://mcp.ankimcp.com/sse",
+    "includeTools": ["retention_stats", "deck_health", "find_problems", "backup_collection"]
+  }
+}

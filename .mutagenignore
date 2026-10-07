@@ -1,0 +1,18 @@
+# Machine-local / volatile state — do NOT sync between Mac and laptop.
+# (Phase 2 of the 2026-08-26 contamination-cleanup plan.)
+.jj/
+.jj.broken*/
+.git/
+.goose/
+.headroom/
+.code-graph/
+.agents/
+.factory_memory/
+AnkiPlayGround/
+config/
+custom_providers/
+target/
+node_modules/
+diagnostics_*.zip
+*.bak*
+.DS_Store

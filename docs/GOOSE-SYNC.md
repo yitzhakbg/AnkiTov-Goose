@@ -1,3 +1,8 @@
+---
+type: note
+title: Goose Session Sync — Mac ↔ ybgXPS laptop
+---
+
 # Goose Session Sync — Mac ↔ ybgXPS laptop
 
 Keep both machines showing the same Goose chats.
