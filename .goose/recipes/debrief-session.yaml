@@ -36,4 +36,20 @@ instructions: |
      Work stranded locally on a multi-machine repo gets duplicated by, or conflicts with,
      the next session — this is the mirror of the bootstrap-session fetch rule. Leave
      genuinely unfinished work unpushed only if it is deliberately WIP.
-  10. Present a 5-line closing summary to the operator, INCLUDING the double-harness verdict.
+  10. **Post the session summary to the Buzz Hive** (it is a standing part of the
+      workflow — the agents should see what happened between their sessions).
+      Compose a compact summary (what was accomplished, double-harness verdict,
+      next steps — reuse the closing summary content) and post it to the #docs
+      channel as the owner:
+      ```bash
+      HIVE=/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive
+      BUZZ_PRIVATE_KEY="$(python3 -c "import json;print(json.load(open('$HIVE/agent-team.json'))['owner']['private_key'])")" \
+      BUZZ_RELAY_URL=ws://100.89.254.76:3000 \
+      "$HIVE/target/release/buzz" --format compact messages send \
+        --channel de1984bb-6576-4493-acbc-5cc21d0faa5e --content "<summary>"
+      ```
+      A write returns `{"accepted":true,"event_id":…}` — record the event_id in
+      one line. If the hive is down (relay not responding), run
+      `hive-status.sh --fix` first and retry once; if it is still down, note
+      "hive post SKIPPED (relay down)" in the brief instead of blocking closure.
+  11. Present a 5-line closing summary to the operator, INCLUDING the double-harness verdict.

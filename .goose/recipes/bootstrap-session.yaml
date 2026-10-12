@@ -17,11 +17,20 @@ instructions: |
         resolve conflicts favoring `main` for files the remote side evolved, and
         abandon working-copy changes that become `(empty)` after the rebase (they
         are duplicates). Never re-implement changes that already exist on `main`.
-  3. Verify current compilation sanity via `cargo check` (in `backend/` or repo root as appropriate).
-  4. Compare the state in `latest.md` against actual repository state (check branch/bookmark, working copy changes).
-  5. Formulate a concise **Active Working Envelope** (under 200 words):
+  3. Verify the Buzz Hive is up and fold it into the session: run
+     `/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/scripts/hive-status.sh --fix`.
+     Exit 0 prints `hive: HEALTHY — relay :3000 up, 7/7 agents running`; anything
+     else means it repaired (or failed to repair) — report the outcome in one line.
+     The hive (relay + 7 agents: archivist, strategist, engineer, marketeer,
+     scribe, task-master, media-producer) is a standing part of the workflow:
+     channel updates, task tracking (#task-master), and session briefs (#docs)
+     flow through it. If the operator's request touches a hive domain, mention
+     the relevant agent/channel as a collaboration option.
+  4. Verify current compilation sanity via `cargo check` (in `backend/` or repo root as appropriate).
+  5. Compare the state in `latest.md` against actual repository state (check branch/bookmark, working copy changes).
+  6. Formulate a concise **Active Working Envelope** (under 200 words):
      - Current Goal / Prong
      - Active Branch / Bookmark & Base Commit
      - Current Working Set (modified/relevant files)
      - Top Priority Immediate Action
-  6. Present the summary to the operator and request confirmation before proceeding with work.
+  7. Present the summary to the operator and request confirmation before proceeding with work.
