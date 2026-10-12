@@ -7,13 +7,33 @@ instructions: |
 
   1. Run `jj status` and `jj log --limit 2` to capture the current commit, modified files, and working branch.
   2. Run `cargo check` to record current compilation status.
-  3. Extract core outcomes from this session:
+  3. **Double-harness gate (automatic, do not skip):** if ANY change in this session
+     touched `backend/` (source, routes, controllers, services, or tests), run
+     `scripts/harness2/run_all.sh` before writing the brief. It runs Harness 1
+     (cargo nextest) then Harness 2 (Python black-box over HTTP against a live
+     server) and writes `project-knowledge/YYYY-MM-DD-double-harness-combined.md`
+     + `-results.md`. Record its exit code and verdict in the brief:
+       - exit 0 → "double-harness GREEN (both passed)"
+       - exit 1 → "double-harness RED — list the failing suites; do NOT mark the
+         session's changes as done"
+       - exit 2 → "double-harness ENV-FAIL — server could not start/reach; capture
+         the reason, this is not a test pass"
+     If only non-backend surfaces changed (pure marketing site, outreach docs),
+     note "harness 2 not required (no backend change)" instead. NEVER record a
+     backend change as complete without running it. Full spec: specs/double-harness.md.
+  4. Extract core outcomes from this session:
      - What was accomplished
      - Key architectural or code decisions made
+     - The double-harness verdict (step 3)
      - Immediate next steps for the next chat
      - Any blockers, gotchas, or failed attempts (and how they were resolved)
-  4. Write the structured handoff brief to `.goose/briefs/latest.md`.
-  5. Save an immutable timestamped copy to `.goose/briefs/archive/YYYY-MM-DD-HHmm.md`.
-  6. If any new persistent gotchas or rules were discovered, append them to `workspace/Gotchas.md`.
-  7. If significant decisions were finalized, append a brief entry to `project-knowledge/key-decisions.md`.
-  8. Present a 5-line closing summary to the operator.
+  5. Write the structured handoff brief to `.goose/briefs/latest.md`.
+  6. Save an immutable timestamped copy to `.goose/briefs/archive/YYYY-MM-DD-HHmm.md`.
+  7. If any new persistent gotchas or rules were discovered, append them to `workspace/Gotchas.md`.
+  8. If significant decisions were finalized, append a brief entry to `project-knowledge/key-decisions.md`.
+  9. If this session produced commits intended for `main`, push them before closing:
+     `jj bookmark set main -r <tip>` (fast-forward only), then `jj git push --bookmark main`.
+     Work stranded locally on a multi-machine repo gets duplicated by, or conflicts with,
+     the next session — this is the mirror of the bootstrap-session fetch rule. Leave
+     genuinely unfinished work unpushed only if it is deliberately WIP.
+  10. Present a 5-line closing summary to the operator, INCLUDING the double-harness verdict.
