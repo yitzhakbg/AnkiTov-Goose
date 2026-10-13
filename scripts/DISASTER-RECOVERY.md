@@ -11,7 +11,9 @@ Scenario: **the Mac is gone.** You have: a new/bare machine, a browser, and this
 | Asset | Where | How you get it back |
 |---|---|---|
 | Goose config, **secrets.yaml**, custom_providers, memory, recipes, headroom state | **This Drive folder** → `goose-env-ybgmacmini-20261010-232116/goose-config.tar` | restore step 3 |
-| Goose data (apps, model_catalog, models, moose, scheduled_recipes, projects/schedule json) | bundle → `goose-data.tar` | restore step 4 |
+| Goose data (apps, model_catalog, models, moose, scheduled_recipes, projects/schedule json, reminder recipes+state) | bundle → `goose-data.tar` (whisper gguf + model_catalog API cache + reminder logs excluded as re-downloadable) | restore step 4 |
+| **Reminder-delivery system** (runner + plist + schedule) | bundle → `reminder-system/goose-reminder.sh`; plist via `launchd/` (user.ybg.*); `reminders.tsv` via `goose-config.tar` | restore step 8 (runner) + launchd/copy tsv |
+| **AnkiPlayGround student collections** (44 practice profiles, ~84MB) | bundle → `ankiplayground.tar` | restore step 7 (extracts into `$ANKITOV`) |
 | **All Goose chats (sessions DB)** | bundle → `sessions-ybgmacmini.db.zst` **and** git archive `github.com/yitzhakbg/AnkiTov-Sessions` | §6 |
 | opencode config + credentials | bundle → `opencode.tar` | restore step 5 |
 | gbrain-mcp wrappers + owner json | bundle → `bun-gbrain/` | restore step 6 |

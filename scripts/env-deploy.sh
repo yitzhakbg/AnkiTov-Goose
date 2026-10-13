@@ -135,11 +135,13 @@ cmd_capture() {
     # (247MB, Hugging Face) and the model_catalog API cache (5MB, refetched).
     rsync -aL --exclude 'sessions/' --exclude '.DS_Store' --exclude '*.bak*' \
       --exclude 'models/whisper-*.gguf' --exclude 'model_catalog/models_dev_api.*' \
+      --exclude 'reminders/log-*.txt' --exclude 'reminders/launchd.*.log' \
       "$HOME_DATA/" "$STAGE/" 2>/dev/null || warn "rsync partial (expected if volatile /tmp symlinks are broken) — continuing"
   else
     warn "rsync missing — fallback tar copy"
     tar -cf - -C "$HOME_DATA" --exclude './sessions' --exclude './*.bak*' --exclude './.DS_Store' \
-      --exclude './models/whisper-*.gguf' --exclude './model_catalog/models_dev_api.json' . | tar -xf - -C "$STAGE"
+      --exclude './models/whisper-*.gguf' --exclude './model_catalog/models_dev_api.json' \
+      --exclude './reminders/log-*.txt' --exclude './reminders/launchd.*.log' . | tar -xf - -C "$STAGE"
   fi
   # volatile /tmp-backed state: materialize REAL content into staged dir
   local f latest
@@ -254,6 +256,19 @@ mutagen sync create --name ankitov-goose --default-mode-two-way-resolved \
   "<WORKSPACE_ROOT>/AnkiTov-goose" "ybg@ybgxps:/home/ybg/AnkiTov-goose"
 MUTFIN
   chmod +x "$DEST/mutagen-restore.sh"
+  # reminder-delivery system (2026-10-12): runner script lives in ~/.local/bin
+  # (NOT covered by goose-config/goose-data tars); the plist is captured via
+  # launchd/ (user.ybg.*), reminders.tsv via goose-config.tar, and
+  # ~/.local/share/goose/reminders/ (recipes + state) via goose-data.tar
+  # (logs excluded there).
+  step "6b/8 reminder system (goose-reminder.sh)"
+  mkdir -p "$DEST/reminder-system"
+  if [ -f "$HOME/.local/bin/goose-reminder.sh" ]; then
+    cp -p "$HOME/.local/bin/goose-reminder.sh" "$DEST/reminder-system/" \
+      && ok "goose-reminder.sh captured → reminder-system/"
+  else
+    warn "no ~/.local/bin/goose-reminder.sh — reminder runner not captured"
+  fi
   step "7/8 repo manifest (remote + sha; clone on restore)"
   : > "$DEST/repos.tsv"
   local allrepos="$REPOS" nested subrepo rel
@@ -359,6 +374,8 @@ DEST=$DEST
 - repos.tsv          — clone list: AnkiTov, AnkiTov-Goose (+SHA), ankitov-goose-state.tar for AnkiTov/.goose, ankitov-c-goose-state.tar for AnkiTov-C/.goose (recipes incl. verify-loop, briefs, offload)
 - Sessions DB: git archive (github.com/yitzhakbg/AnkiTov-Sessions) AND copied into this bundle as sessions-$HOST.db.zst (restore: zstd -d → sessions.db, or \`sync-sessions.sh restore\`)
 - ankiplayground.tar — AnkiTov/AnkiPlayGround (44 student practice profiles, ~84MB)
+- reminder-system/   — goose-reminder.sh runner (plist via launchd/, reminders.tsv via
+  goose-config.tar, recipes+state via goose-data.tar minus logs)
 - Excluded by design: ~/.bun (2.4G), AnkiTov/.goose/venvs, scratch, offload, legacy sessions copies,
   ~/Library/Application Support/Anki2 (8.2G — user decision, NOT backed up here),
   whisper gguf model (247M, re-download from HF), model_catalog API cache (refetched)
@@ -439,6 +456,11 @@ cmd_restore() {
   if [ -f "$B/ankitov-goose-state.tar" ] && [ -d "$ANKITOV/.goose.pre-restore" ]; then :; fi
   [ -f "$B/ankitov-goose-state.tar" ] && { [ -d "$ANKITOV/.goose" ] && mv "$ANKITOV/.goose" "$ANKITOV/.goose.pre-restore.$(date +%s)" || true; tar -xf "$B/ankitov-goose-state.tar" -C "$ANKITOV"; ok "AnkiTov/.goose state restored (venvs/scratch NOT included — rebuild venvs as needed)"; }
   [ -f "$B/ankitov-c-goose-state.tar" ] && { [ -d "$ANKITOV_C/.goose" ] && mv "$ANKITOV_C/.goose" "$ANKITOV_C/.goose.pre-restore.$(date +%s)" || true; tar -xf "$B/ankitov-c-goose-state.tar" -C "$ANKITOV_C"; ok "AnkiTov-C/.goose state restored"; }
+  if [ -f "$B/reminder-system/goose-reminder.sh" ]; then
+    mkdir -p "$HOME/.local/bin"
+    cp -p "$B/reminder-system/goose-reminder.sh" "$HOME/.local/bin/" && chmod +x "$HOME/.local/bin/goose-reminder.sh"
+    ok "reminder runner installed → ~/.local/bin/goose-reminder.sh (plist via launchd/; reminders.tsv via goose-config.tar)"
+  fi
   [ -f "$B/ankiplayground.tar" ] && { mkdir -p "$ANKITOV"; tar -xf "$B/ankiplayground.tar" -C "$ANKITOV"; ok "AnkiPlayGround collections restored (44 student profiles)"; }
   step "8/8 sessions, agents, mutagen"
   if [ -x "$SESSIONS_SCRIPT" ]; then
