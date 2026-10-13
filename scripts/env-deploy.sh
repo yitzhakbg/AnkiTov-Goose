@@ -131,11 +131,15 @@ cmd_capture() {
   if command -v rsync >/dev/null 2>&1; then
     # exit 23 = partial transfer; tolerated — broken volatile symlinks (e.g.
     # schedule.json → /tmp) are handled explicitly below from .bak fallbacks
+    # Excluded as re-downloadable (user policy 2026-10-12): whisper gguf model
+    # (247MB, Hugging Face) and the model_catalog API cache (5MB, refetched).
     rsync -aL --exclude 'sessions/' --exclude '.DS_Store' --exclude '*.bak*' \
+      --exclude 'models/whisper-*.gguf' --exclude 'model_catalog/models_dev_api.*' \
       "$HOME_DATA/" "$STAGE/" 2>/dev/null || warn "rsync partial (expected if volatile /tmp symlinks are broken) — continuing"
   else
     warn "rsync missing — fallback tar copy"
-    tar -cf - -C "$HOME_DATA" --exclude './sessions' --exclude './*.bak*' --exclude './.DS_Store' . | tar -xf - -C "$STAGE"
+    tar -cf - -C "$HOME_DATA" --exclude './sessions' --exclude './*.bak*' --exclude './.DS_Store' \
+      --exclude './models/whisper-*.gguf' --exclude './model_catalog/models_dev_api.json' . | tar -xf - -C "$STAGE"
   fi
   # volatile /tmp-backed state: materialize REAL content into staged dir
   local f latest
@@ -152,6 +156,18 @@ cmd_capture() {
       [ -s "$STAGE/$f" ] || warn "$f could not be recovered from any backup — restore manually"
     fi
   done
+  # AnkiPlayGround student-profile collections (user policy 2026-10-12: INCLUDE —
+  # 84MB of 44 generated practice profiles; regenerable via update-playground-profiles
+  # but cheap to carry and preserves hand-tuned state). Anki2 (~/Library/Application
+  # Support/Anki2, 8.2GB) is deliberately NOT captured (user decision).
+  if [ -d "$ANKITOV/AnkiPlayGround" ]; then
+    step "2b/8 AnkiPlayGround collections"
+    tar -cf "$DEST/ankiplayground.tar" -C "$ANKITOV" \
+      --exclude '.DS_Store' --exclude '.git' AnkiPlayGround 2>/dev/null \
+      && ok "AnkiPlayGround captured ($(du -sh "$DEST/ankiplayground.tar" | cut -f1))" \
+      || warn "ankiplayground.tar failed"
+    printf 'ankiplayground.tar\t%s\n' "$ANKITOV/AnkiPlayGround (44 student profiles)" >> "$DEST/repos.tsv"
+  fi
   tar -cf "$DEST/goose-data.tar" -C "$STAGE" . && rm -rf "$STAGE"
   if [ "$LIGHT" = 1 ]; then warn "3/8 opencode SKIPPED (--light)"; else
     step "3/8 opencode config"
@@ -342,7 +358,10 @@ DEST=$DEST
 - launchd/ crontab.txt mutagen-sessions.txt mutagen-restore.sh (incl. user.ybg.* plists; gbrain HTTP LaunchAgent is DISABLED on purpose — brain is Postgres-backed, do not recreate)
 - repos.tsv          — clone list: AnkiTov, AnkiTov-Goose (+SHA), ankitov-goose-state.tar for AnkiTov/.goose, ankitov-c-goose-state.tar for AnkiTov-C/.goose (recipes incl. verify-loop, briefs, offload)
 - Sessions DB: git archive (github.com/yitzhakbg/AnkiTov-Sessions) AND copied into this bundle as sessions-$HOST.db.zst (restore: zstd -d → sessions.db, or \`sync-sessions.sh restore\`)
-- Excluded by design: ~/.bun (2.4G), AnkiTov/.goose/venvs, scratch, offload, legacy sessions copies
+- ankiplayground.tar — AnkiTov/AnkiPlayGround (44 student practice profiles, ~84MB)
+- Excluded by design: ~/.bun (2.4G), AnkiTov/.goose/venvs, scratch, offload, legacy sessions copies,
+  ~/Library/Application Support/Anki2 (8.2G — user decision, NOT backed up here),
+  whisper gguf model (247M, re-download from HF), model_catalog API cache (refetched)
 Total size: $TOTAL. PROTECT this bundle: contains secrets.yaml and AnkiTov/.goose/secrets.
 EOF
   ok "bundle ready: $DEST ($TOTAL)"
@@ -419,6 +438,8 @@ cmd_restore() {
   done < "$B/repos.tsv"
   if [ -f "$B/ankitov-goose-state.tar" ] && [ -d "$ANKITOV/.goose.pre-restore" ]; then :; fi
   [ -f "$B/ankitov-goose-state.tar" ] && { [ -d "$ANKITOV/.goose" ] && mv "$ANKITOV/.goose" "$ANKITOV/.goose.pre-restore.$(date +%s)" || true; tar -xf "$B/ankitov-goose-state.tar" -C "$ANKITOV"; ok "AnkiTov/.goose state restored (venvs/scratch NOT included — rebuild venvs as needed)"; }
+  [ -f "$B/ankitov-c-goose-state.tar" ] && { [ -d "$ANKITOV_C/.goose" ] && mv "$ANKITOV_C/.goose" "$ANKITOV_C/.goose.pre-restore.$(date +%s)" || true; tar -xf "$B/ankitov-c-goose-state.tar" -C "$ANKITOV_C"; ok "AnkiTov-C/.goose state restored"; }
+  [ -f "$B/ankiplayground.tar" ] && { mkdir -p "$ANKITOV"; tar -xf "$B/ankiplayground.tar" -C "$ANKITOV"; ok "AnkiPlayGround collections restored (44 student profiles)"; }
   step "8/8 sessions, agents, mutagen"
   if [ -x "$SESSIONS_SCRIPT" ]; then
     local SNAP_HOST
