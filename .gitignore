@@ -23,3 +23,4 @@ config/project-config.yaml
 custom_providers/
 goose_config.yaml
 .code-graph/
+.gbrain-owner.json
