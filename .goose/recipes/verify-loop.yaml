@@ -1,0 +1,45 @@
+# verify-loop.yaml — REBUILT & UPGRADED 2026-10-19
+# Implements: vertical-slice TDD at pre-agreed seams -> project gates ->
+# parallel two-axis review (Standards + Spec via delegate subagents) ->
+# repair (max 2 rounds) -> escalate to z-ai/glm-5.3 via delegate.
+version: 1.0.0
+title: AnkiTov verify-loop
+description: Implement a change, verify it with the project's gates and a parallel two-axis review (Standards + Spec), repair up to twice, then escalate to a stronger model via delegate if still failing.
+instructions: ""
+prompt: |
+  You are closing an implementation & verification loop on AnkiTov-C (/Volumes/YBG1TB4Mac/AnkiTov-C, jujutsu repo).
+  Read `GLOSSARY.md` (if present) first so naming and domain terms stay canonical.
+
+  TASK: {{ TASK }}
+
+  Loop (max 2 repair rounds):
+
+  1. SEAMS & IMPLEMENTATION (TDD discipline):
+     - Name the public seam(s) under test before writing code (HTTP route, service trait/fn, CLI boundary).
+     - Work in vertical slices (one failing behavior test at the seam -> minimal implementation -> green).
+     - Avoid TDD anti-patterns:
+       * No implementation-coupled mocks of internal collaborators (mock only at system boundaries; prefer real SQLite test DB).
+       * No tautological assertions (expected values must be independent literals/spec examples, never recomputed with the same formula as the code).
+       * No horizontal slicing (do not bulk-write all tests before any implementation).
+
+  2. HARD GATES (run in order):
+     a. `cargo check --tests` (workspace) — must pass clean.
+     b. `cargo nextest run -p backend` (or `cargo test -p backend` if nextest unavailable) — must pass.
+     c. If `backend/resources` or `backend/i18n` changed: `python3 tools/validate_i18n.py` — must pass across all 13 locales.
+     d. If `scripts/oss/export-ankitov-core.sh` allowlisted paths changed: record the public-mirror drift implication for the report.
+
+  3. TWO-AXIS REVIEW (spawn TWO read-only `delegate` subagents in parallel once hard gates pass):
+     - **Axis A — Standards subagent**: diff working copy (`jj diff --git`), check against `AGENTS.md`, `specs/audits/*` invariant checklists, `GLOSSARY.md` ubiquitous language, and the Fowler smell baseline (Mysterious Name, Duplicated Code, Feature Envy, Data Clumps, Primitive Obsession, Shotgun Surgery, Speculative Generality). Distinguish hard standard breaches from smell judgment calls. Under 350 words.
+     - **Axis B — Spec subagent**: compare `jj diff --git` against the originating spec / task description (`TASK`). Report: (a) requirements the spec asked for that are missing or partial, (b) unrequested scope creep, (c) requirements implemented subtly wrong (cite spec/task lines). Under 350 words.
+     - Keep the two axis reports separate — do NOT merge or rerank them against each other (Standards pass + Spec fail is still a fail).
+
+  4. REPAIR (max 2 rounds):
+     - If any hard gate fails OR either review axis flags a hard violation / spec gap: fix, re-run hard gates, and re-verify the failing axis.
+     - Count rounds. After 2 failed repair rounds, STOP repairing.
+
+  5. ESCALATE (only if still red after 2 rounds):
+     - Delegate the failing verification + diff + context to a subagent (`delegate`, model `z-ai/glm-5.3`) to diagnose and propose a concrete fix. Apply its fix and re-run gates once.
+
+  6. REPORT:
+     - Seams tested, hard-gate verdicts, `## Standards` and `## Spec` axis summaries (kept separate), repair rounds used, files changed, drift-gate note, and whether escalation fired.
+     - Never push or merge — leave the working copy for owner review.
