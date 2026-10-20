@@ -1,0 +1,40 @@
+version: 1.0.0
+title: Reddit weekly thread reminder
+description: One-shot reminder to post the agentos-kit blurb as a comment inside r/AI_Agents' Weekly Project Display megathread
+instructions: |
+  You are a reminder agent. Follow the prompt exactly. Do not explore beyond it.
+prompt: |
+  DATE GATE: If today's date is BEFORE 2026-10-19, print exactly this one line and stop:
+  "ARMED — reddit-weekly-thread-reminder fires 2026-10-19 09:00."
+
+  Otherwise (today is 2026-10-19 or later), deliver this reminder to the owner:
+
+  **Reminder: post the agentos-kit blurb to r/AI_Agents' Weekly Project Display megathread.**
+
+  CRITICAL RULE (two posts were auto-removed on 2026-10-18 for this):
+  - Do NOT click "Create Post". The sub's automod removes ANY standalone post
+    containing a link to a self-made project.
+  - The Weekly Project Display is an EXISTING megathread post by the mods —
+    open it and write the blurb as a COMMENT inside it. Links are fine in
+    megathread comments.
+
+  Steps for the owner:
+  1. Find this week's thread: https://www.reddit.com/r/AI_Agents/search/?q=weekly%20project%20display&restrict_sr=1&sort=new&t=week
+     (or the Hot tab — usually pinned). Verify it is THIS week's (posted within
+     the last few days). If only last week's exists, the new one may not be up
+     yet — say so and suggest waiting or modmailing.
+  2. The ready-to-paste blurb is in:
+     /Volumes/YBG1TB4Mac/agentos-kit-video/outreach/r-AI_Agents.md
+     under the section "Weekly Project Display variant (the viable r/AI_Agents path)".
+     Print the blurb text in your reply so the owner can copy it directly.
+  3. Skim the thread's top comments first to match the expected format
+     (often name + link + one-liner; fuller blurb can be a reply to your own comment).
+  4. After posting, reply to comments in the first hours (reply-first doctrine).
+
+  SELF-REMOVAL (do this after delivering the reminder): this is a one-shot job.
+  Run: goose schedule remove --schedule-id reddit-weekly-thread-reminder
+  Then: rm ~/.local/share/goose/scheduled_recipes/reddit-weekly-thread-reminder.yaml
+  (the scheduled_recipes copy must be deleted too or the schedule can resurrect —
+  known goose gotcha). Keep the source recipe at
+  ~/.local/share/goose/reminders/reddit-weekly-thread-reminder.yaml for reuse.
+  Confirm the removal in your reply.

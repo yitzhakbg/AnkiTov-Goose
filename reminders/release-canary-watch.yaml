@@ -1,0 +1,21 @@
+version: 1.0.0
+title: Release canary watch
+description: Hourly check of the v1.0.0 release pipeline and ub3090 canary test; reports status to the owner until the canary friction log lands.
+instructions: Execute the prompt procedure exactly. Keep reports short.
+prompt: |
+  Check the AnkiTov v1.0.0 release pipeline status and report to the owner. Procedure:
+
+  1. Run: gh release view v1.0.0 --repo yitzhakbg/AnkiTov
+     - If it SUCCEEDS: the release is published. Note the asset list (expect 6 artifacts + sha256sums.txt).
+  2. Run: gh run list --repo yitzhakbg/AnkiTov --workflow release.yml --limit 2
+     - Note the newest run's status/conclusion (the first run 38623294554 had 2 musl failures: openssl-sys via reqwest native-tls; a fix + re-run may exist).
+  3. Check the hive for the ub3090 canary friction log:
+     export BUZZ_PRIVATE_KEY=$(python3 -c "import json; print(json.load(open('/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/agent-team.json'))['owner']['private_key'])")
+     export BUZZ_RELAY_URL=ws://100.89.254.76:3000
+     /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/target/release/buzz --format compact messages search --query "canary" --limit 3
+     (channel: #engineering 96a36f31-e4cc-465c-8020-ac540488df0a if search needs a channel)
+  4. Report to the owner:
+     - If release PUBLISHED and canary log FOUND: full summary — asset list, friction points from the log, what's next (T-124 docs-vs-reality). Then tell the owner this watch can be removed: goose schedule remove release-canary-watch
+     - If release PUBLISHED but no canary log yet: say the release is live (link https://github.com/yitzhakbg/AnkiTov/releases/tag/v1.0.0), canary pending with the Engineer.
+     - If NOT published: ONE line — newest run status + whether the musl fix has landed (check: gh run list --repo yitzhakbg/AnkiTov-C --workflow release.yml --limit 1 for a rehearsal run, and grep fsrs/rustls in /Volumes/YBG1TB4Mac/AnkiTov-C/backend/Cargo.toml for the reqwest fix).
+     - Never do anything beyond checking and reporting. No fixes, no messages to agents.

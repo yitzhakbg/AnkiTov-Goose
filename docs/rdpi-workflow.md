@@ -128,10 +128,21 @@ recipes/
 ├── ankitov-minimal-change.md       ← surgical fixes, scope discipline
 └── ankitov-spec-researcher.md      ← read-only exploration, model: cheapest
 
-.agents/skills/
-├── code-review/                    ← functional review skill
-├── analyze-stats/                  ← aspirational (MCP backend pending)
-└── deploy-docs/                    ← aspirational (MCP backend pending)
+.agents/skills/ & skills/
+├── grill/                          ← design-tree stress-test interview + Grill Ledger (T-109)
+├── diagnosing-bugs/                ← 6-phase tight red-capable feedback-loop debugging
+├── wizard/                         ← interactive bash wizard generator (template.sh)
+├── writing-for-agents/             ← skill / AGENTS.md / persona authoring & pruning
+├── code-review/                    ← functional pre-commit review skill
+├── analyze-stats/                  ← retention stats analysis
+└── deploy-docs/                    ← Mintlify & Scalar docs deploy
+
+.goose/recipes/
+├── verify-loop.yaml                ← vertical-slice TDD + hard gates + parallel 2-axis review (Standards + Spec)
+├── bootstrap-session.yaml          ← session start + jj fetch + hive-status --fix
+├── debrief-session.yaml            ← session close + double-harness gate + #docs post
+├── compact-context.yaml            ← context offload helper
+└── archive-chat.yaml               ← brief archiving helper
 
 workspace/
 └── Gotchas.md                      ← accumulated AI failure patterns

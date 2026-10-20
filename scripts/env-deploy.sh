@@ -125,6 +125,10 @@ cmd_capture() {
 
   step "1/8 goose config (~/.config/goose) incl. secrets.yaml, custom_providers, memory, .headroom"
   tar -cf "$DEST/goose-config.tar" -C "$HOME/.config" ${TAR_OPTS[@]+"${TAR_OPTS[@]}"} goose
+  if [ -d "$HOME/.agents/skills" ]; then
+    tar -cf "$DEST/agents-skills.tar" -C "$HOME/.agents" ${TAR_OPTS[@]+"${TAR_OPTS[@]}"} skills 2>/dev/null \
+      && ok "user-wide skills (~/.agents/skills) captured → agents-skills.tar" || warn "agents-skills.tar failed"
+  fi
   step "2/8 goose data (~/.local/share/goose) — WITHOUT sessions/; /tmp-symlinked jsons materialized"
   local STAGE="$DEST/.stage"
   rm -rf "$STAGE"; mkdir -p "$STAGE"
@@ -407,6 +411,10 @@ cmd_restore() {
   mkdir -p "$HOME/.config"
   [ -d "$HOME_CONFIG" ] && mv "$HOME_CONFIG" "$HOME_CONFIG.pre-restore.$(date +%s)" || true
   tar -xf "$B/goose-config.tar" -C "$HOME/.config" && chmod 700 "$HOME_CONFIG" && chmod 600 "$HOME_CONFIG/secrets.yaml" 2>/dev/null || true
+  if [ -f "$B/agents-skills.tar" ]; then
+    mkdir -p "$HOME/.agents"
+    tar -xf "$B/agents-skills.tar" -C "$HOME/.agents" && ok "restored ~/.agents/skills" || warn "agents-skills.tar extract failed"
+  fi
   ok "restored ~/.config/goose"
   step "4/8 goose data (sessions/ left untouched)"
   local DATABAK item

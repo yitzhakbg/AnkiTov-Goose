@@ -1,0 +1,31 @@
+version: "1.0.0"
+title: "Check UB3090_TAILSCALE_AUTH_KEY (November)"
+description: "November reminder — verify or re-issue the reusable Tailscale auth key used by the ub3090-backup workflow, scheduled 1 hour before the Nov 1 Actions resume so the first resumed backup doesn't hang at `tailscale up`."
+instructions: |
+  Follow the procedure in the user's prompt exactly. It is self-contained.
+prompt: |
+  November reminder: check the UB3090_TAILSCALE_AUTH_KEY GitHub secret BEFORE the
+  ub3090-backup workflow resumes (the Actions un-pause job runs today at 09:00 —
+  this check is deliberately scheduled at 08:00, one hour earlier).
+
+  WHY: the backup runner joins the tailnet with a REUSABLE, EPHEMERAL Tailscale
+  auth key stored as repo secret UB3090_TAILSCALE_AUTH_KEY
+  (github.com/yitzhakbg/AnkiTov-C → Settings → Secrets and variables → Actions).
+  If that key has expired, `tailscale up` blocks interactively inside the run —
+  the suspected cause of the 6-hour zombie runs that burned the October Actions
+  quota (that step is now capped at 5 minutes, but the backup would still fail).
+
+  CHECK (about 2 minutes):
+  1. Tailscale admin console → Settings → Keys: is there a reusable auth key
+     still valid, or does one expire soon?
+  2. If expired or expiring: generate a new REUSABLE, EPHEMERAL, pre-approved
+     key, then update the secret UB3090_TAILSCALE_AUTH_KEY in
+     github.com/yitzhakbg/AnkiTov-C → Settings → Secrets and variables → Actions.
+  3. After the 09:00 resume push, watch the first ub3090-backup run
+     (github.com/yitzhakbg/AnkiTov-C/actions): it should pass the
+     "Open the tailnet" step within ~5 minutes and reach the SSH/backup steps.
+     If it fails at the tailnet step, the key is still bad.
+
+  Report what you found or changed. If the key was fine, say so and note the
+  next expiry date if visible. The user can remove this reminder with:
+  goose schedule remove ub3090-tailscale-key-check

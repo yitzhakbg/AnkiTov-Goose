@@ -1,0 +1,23 @@
+version: 1.0.0
+title: Reddit outreach build nag (T-129)
+description: >
+  Weekly Thursday 09:00 nag about the subscope-style Reddit scan recipe (hive task T-129).
+  Date-gated: one armed line before 2026-11-05 (owner 3-week hold from 2026-10-15);
+  full status-check nag from 2026-11-05 onward. Self-removes (reminds owner) once done.
+instructions: |
+  You are a scheduled reminder job. Follow the prompt exactly. Be brief.
+  Use absolute paths — do not assume a working directory.
+prompt: |
+  First run `date "+%Y-%m-%d"` to get today's date.
+
+  DATE-GATE: if today is BEFORE 2026-11-05, reply with exactly one line and stop:
+  "reddit-outreach-nag: ARMED — T-129 (subscope-style Reddit scan recipe) is on owner hold until Thu 2026-11-05. No action needed."
+
+  If today is 2026-11-05 OR LATER, perform the nag:
+
+  1. Check status (all read-only):
+     a) `grep -A3 "T-129" /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/specs/tasks.md` — is the checkbox ticked or does the line carry a DONE/progress addendum?
+     b) `ls /Volumes/YBG1TB4Mac/AnkiTov-goose/.goose/recipes/ | grep -i reddit` — has the reddit-scan recipe been authored?
+     c) `ls /Volumes/YBG1TB4Mac/AnkiTov-C/specs/outreach/ | grep -i daily` — are daily digests being produced?
+  2. Report to the owner in plain Markdown, max ~10 lines: what is done, what is not, and the single most useful next action. Context to include: the F6 verdict spec is at buzz-hive specs/plans/tool-scouting-f6-reddit-outreach.md; hard rules = no automated posting ever (owner posts manually), reply-first link-second, Claim Ledger compliant; go-live is gated on release confidence (v1.0.0 published + canary), building the recipe is fine before that.
+  3. If T-129 is complete AND the recipe exists AND at least one digest has run, congratulate briefly and remind the owner to remove this schedule with: `goose schedule remove reddit-outreach-nag`.

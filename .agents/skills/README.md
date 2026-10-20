@@ -72,10 +72,17 @@ reduces context bloat.
 
 ## Current Skills
 
-| Directory | Purpose |
-|-----------|---------|
-| `deploy-docs/` | Deploy Mintlify docs and Scalar API reference |
-| `analyze-stats/` | Analyze retention statistics via the Management Console |
+| Directory | Location | Purpose |
+|-----------|----------|---------|
+| `grill/` | `skills/grill/` (`~/.agents/skills/grill`) | Relentless design-tree frontier interview + explicit Grill Ledger (`T-109`) |
+| `diagnosing-bugs/` | `skills/diagnosing-bugs/` (`~/.agents/skills/diagnosing-bugs`) | 6-phase tight red-capable feedback-loop debugging discipline + HITL bash template |
+| `wizard/` | `skills/wizard/` (`~/.agents/skills/wizard`) | Interactive resumable bash wizard generator for human-only browser/credential steps |
+| `writing-for-agents/` | `skills/writing-for-agents/` (`~/.agents/skills/writing-for-agents`) | Reference guide for authoring skills, `AGENTS.md`, and persona files (context vs. cognitive load) |
+| `code-review/` | `skills/code-review/` | Pre-commit functional, security, and Rust backend review checklist |
+| `deploy-docs/` | `.agents/skills/deploy-docs/` | Deploy Mintlify docs and Scalar API reference |
+| `analyze-stats/` | `.agents/skills/analyze-stats/` | Analyze retention statistics via the Management Console |
+
+See [`docs/skills-and-workflow-2026-10.md`](../../docs/skills-and-workflow-2026-10.md) for the full operating guide.
 
 ---
 

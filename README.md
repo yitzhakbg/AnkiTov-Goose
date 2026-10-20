@@ -46,9 +46,43 @@ ankitov-goose/
 │   └── deploy-headroom.sh        🚀  Headroom proxy installer (macOS + Linux)
 ├── config/                        Goose configuration (templated paths)
 │   ├── global-config.yaml         ~/.config/goose/config.yaml
-│   └── project-config.yaml        AnkiTov project config (goose_config.yaml)
-├── custom_providers/              Custom LLM provider definitions
+│   ├── project-config.yaml        AnkiTov project config (goose_config.yaml)
+│   └── context-mode-routing.md    Sandbox-first routing rules (GOOSE_MOIM_MESSAGE_FILE)
+├── custom_providers/              Custom LLM provider definitions (per-model context_limit)
+│   ├── custom_glm.json            GLM & Gemini 3.8 Flash via local Headroom proxy (:8787)
+│   ├── custom_glm_bili.json       GLM via billion-context (bili :8790) -> OpenRouter (Hive lanes)
+│   ├── custom_gemini_bili.json    Gemini 3.8 Flash via bili (:8790) -> OpenRouter (@Strategist)
+│   ├── custom_qwen_ub3090.json    Qwen3.8-27B on ub3090 vLLM (:18020)
+│   ├── custom_inclusionai.json    InclusionAI Ling via Headroom proxy
+│   ├── custom_stealth.json        Stealth via Headroom proxy
 │   └── custom_agnes.json          Agnes AI provider
+├── skills/                        Source-local Agent Skills (installed by bootstrap.sh)
+│   ├── grill/                     Design-tree stress-test interview + Grill Ledger (T-109)
+│   ├── diagnosing-bugs/           6-phase hard-bug feedback-loop discipline + HITL template
+│   ├── wizard/                    Interactive bash wizard generator for human-only setup steps
+│   ├── writing-for-agents/        Skill / AGENTS.md / persona authoring & pruning guide
+│   └── code-review/               Pre-commit Rust & security review skill
+├── .goose/
+│   ├── recipes/                   Tracked mirror of AnkiTov-C summon subagents & verify-loop
+│   │   ├── bootstrap-session.yaml
+│   │   ├── debrief-session.yaml
+│   │   ├── compact-context.yaml
+│   │   ├── archive-chat.yaml
+│   │   ├── verify-loop.yaml       Vertical-slice TDD + hard gates + parallel 2-axis review
+│   │   ├── ankitov-spec-generator.yaml
+│   │   ├── entroly-review.yaml
+│   │   └── update-playground-profiles.yaml
+│   └── notebook-export/           30-min AnkiTov-C -> Google Drive -> Gemini Notebook sync
+│       ├── merge_docs.py
+│       ├── ankitov-notebook-export.sh
+│       └── README.md
+├── reminders/                     Date-gated & standing scheduled reminder recipes
+│   └── *.yaml                     mattpocock-skills-check, context-mode-ctx-stats, xerj-gain-check, etc.
+├── docs/
+│   ├── skills-and-workflow-2026-10.md  Canonical guide to Oct 2026 skills, verify-loop & stack
+│   ├── rdpi-workflow.md           Research -> Design (Grill) -> Plan -> Implement (verify-loop)
+│   ├── gotchas.md                 Accumulated AI & ops failure points
+│   └── GOOSE-SYNC.md              Cross-machine session sync guide
 ├── recipes/                       System-level Goose recipes
 │   ├── ankitov-design.yaml
 │   ├── ankitov-plan.yaml

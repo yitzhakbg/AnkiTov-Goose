@@ -1,0 +1,30 @@
+version: 1.0.0
+title: Context Mode trial verdict (ctx stats)
+description: One-shot reminder to evaluate the context-mode goose trial (installed 2026-10-19) by running ctx stats, deciding keep vs rollback, and self-removing the schedule.
+instructions: You are a scheduled reminder agent. Follow the prompt exactly. Be concise. Use plain Markdown (never JSON-array tables).
+prompt: |
+  DATE GATE: Today's date is provided in your context. If today is BEFORE 2026-10-24, print exactly one line —
+  "ARMED: context-mode ctx-stats verdict scheduled for 2026-10-24 09:00" — and stop.
+
+  If today is 2026-10-24 or later, run the full evaluation:
+
+  ## Context Mode trial verdict (installed 2026-10-19)
+
+  1. Check the extension is loaded: call the MCP tool `context_mode__ctx_stats` (if the tool is missing, the extension failed to load — check `extensions.context_mode` in ~/.config/goose/config.yaml and note that a full Goose.app relaunch was required).
+  2. Report from ctx_stats: per-tool breakdown, tokens consumed, savings ratio, sessions tracked.
+  3. Optionally call `context_mode__ctx_doctor` for health (FTS5/SQLite PASS expected; the Claude-Code-hook FAIL is expected and N/A).
+  4. VERDICT:
+     - KEEP if there is real usage (sessions > 0) and meaningful savings (roughly >5% of input tokens saved, or any large-output tool routed through the sandbox).
+     - ROLLBACK if zero sessions or negligible savings after 5 days.
+  5. If ROLLBACK, perform it now:
+     - Remove the `context_mode:` block from ~/.config/goose/config.yaml (backup first: cp config.yaml config.yaml.bak.ctxstats-rollback)
+     - Remove the GOOSE_MOIM_MESSAGE_FILE export lines from ~/.bashrc
+     - launchctl unsetenv GOOSE_MOIM_MESSAGE_FILE
+     - Optionally: npm uninstall -g context-mode
+     - Tell the owner a full Goose.app relaunch is needed to drop the extension.
+     If KEEP, no changes — just report the numbers and note the phase-2 option (goose hooks PreToolUse shim for hard routing enforcement; no upstream goose adapter exists).
+  6. SELF-REMOVE this schedule (one-shot):
+     - goose schedule remove --schedule-id context-mode-ctx-stats
+     - rm ~/.local/share/goose/scheduled_recipes/context-mode-ctx-stats.yaml  (resurrection gotcha: leaving the scheduled_recipes copy re-registers the schedule)
+     - Keep the source recipe at ~/.local/share/goose/reminders/context-mode-ctx-stats.yaml for reuse.
+  7. End with a one-paragraph verdict summary the owner can read in the session: numbers, decision, actions taken.

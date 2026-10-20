@@ -1,0 +1,34 @@
+version: 1.0.0
+title: Matt Pocock skills & workflow upgrades — 24h evaluation + commit/push gate
+description: One-shot reminder (2026-10-20 19:00) to examine how the 4 mattpocock/skills adoptions (diagnosing-bugs/wizard/writing-for-agents, grill T-109, verify-loop TDD+2-axis review, GLOSSARY.md+Design-It-Twice/ADR) are benefiting us, flag any problems, and decide whether to commit and push them across AnkiTov-C, buzz-hive, and AnkiTov-goose.
+instructions: You are a scheduled reminder agent. Follow the prompt exactly. Be concise. Use plain Markdown (never JSON-array tables).
+prompt: |
+  DATE/TIME GATE: Check the current time in `<turn-context>`. If the current time is BEFORE 2026-10-20 18:00, print exactly one line —
+  "ARMED: mattpocock-skills-check scheduled for 2026-10-20 19:00" — and stop.
+
+  If it is 2026-10-20 18:00 or later, run the full examination:
+
+  ## Matt Pocock Skills & Workflow Upgrades — 24h Examination (installed 2026-10-19)
+
+  ### 1. Inventory & Integrity Check
+  Verify all 4 adopted items are intact on disk:
+  - **Item 1 (Tier 1 skills)**: `~/.agents/skills/{diagnosing-bugs,wizard,writing-for-agents}`, symlinks in `~/.config/goose/skills/`, and copies in `/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/personas/hive-ankitov/skills/` + `skills-lock.json`.
+  - **Item 2 (`grill` T-109)**: `~/.agents/skills/grill/SKILL.md` + hive copy + `buzz-hive/specs/tasks.md` T-109 line.
+  - **Item 3 (`verify-loop`)**: `/Volumes/YBG1TB4Mac/AnkiTov-C/.goose/recipes/verify-loop.yaml` + `/Volumes/YBG1TB4Mac/AnkiTov-goose/.goose/recipes/verify-loop.yaml`.
+  - **Item 4 (`GLOSSARY.md` + `@Strategist` rules)**: `/Volumes/YBG1TB4Mac/AnkiTov-C/GLOSSARY.md`, `buzz-hive/personas/hive-ankitov/instructions.md`, and `buzz-hive/personas/hive-ankitov/agents/strategist.persona.md`.
+
+  ### 2. Usage & Benefit Audit (last 24h)
+  Check recent goose sessions and hive activity since 2026-10-19 19:30:
+  - Run `goose session list` (or inspect recent session logs / `.goose/briefs/latest.md` / hive `#strategy` and `#engineering` messages via `buzz --format compact messages list`) to see whether `grill`, `diagnosing-bugs`, `wizard`, `writing-for-agents`, `verify-loop`, or `GLOSSARY.md` were invoked or referenced.
+  - Check **context load impact**: measure the added always-loaded skill description lines (~4 short descriptions) and `instructions.md` / `strategist.persona.md` delta (+8 lines total). Confirm no context bloat, no skill-name collisions, and no broken symlinks.
+  - Check **Claude-Code-isms / friction**: inspect the installed `SKILL.md` files for any remaining references to Claude-only tools (`Skill tool`, `/setup-matt-pocock-skills`, `GLOSSARY-MAP.md` assumptions) that could confuse goose or hive lanes, and report whether any trim is warranted before committing.
+
+  ### 3. Verdict & Commit/Push Readiness across the 3 Repos
+  Check working-copy status in each repo (`jj status` in `/Volumes/YBG1TB4Mac/AnkiTov-C`, `git status -s` in `/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive`, `git status -s` in `/Volumes/YBG1TB4Mac/AnkiTov-goose`):
+  - Confirm `GLOSSARY.md` is NOT in `scripts/oss/export-ankitov-core.sh` `FILE_MAP`/`DIR_MAP` (so committing it to `AnkiTov-C` has zero public-mirror drift-gate impact).
+  - Give a clear recommendation for each of the 4 items: **KEEP & COMMIT**, **TRIM THEN COMMIT**, or **ROLLBACK**, with concrete commands ready for the owner (or execute the commit+push if the owner's standing instruction in this prompt is satisfied and zero problems were found — note: per owner prompt "Then consider committing and pushing them", present the findings and exact commit/push plan clearly, and if everything is clean and unambiguous, ask for a 1-word "push" confirmation or note what was staged).
+
+  ### 4. Self-Remove Schedule (one-shot)
+  - `goose schedule remove --schedule-id mattpocock-skills-check`
+  - `rm -f ~/.local/share/goose/scheduled_recipes/mattpocock-skills-check.yaml` (resurrection gotcha)
+  - Keep `~/.local/share/goose/reminders/mattpocock-skills-check.yaml` inert on disk.

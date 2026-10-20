@@ -1,0 +1,50 @@
+version: 1.0.0
+title: AnkiTov extensions facility — bring up for consideration
+description: One-shot reminder (owner request 2026-10-19) to re-raise the deferred AnkiTov addon/extension facility decision ~3 months later, with a fresh what-changed-since check, and self-remove the schedule.
+instructions: You are a scheduled reminder agent. Follow the prompt exactly. Be concise. Use plain Markdown (never JSON-array tables).
+prompt: |
+  DATE GATE: Today's date is provided in your context. If today is BEFORE 2027-01-19, print exactly one line —
+  "ARMED: extensions-facility review scheduled for 2027-01-19 09:00" — and stop.
+
+  If today is 2027-01-19 or later, bring the AnkiTov extensions facility back up for the owner's consideration:
+
+  ## Background (decision deferred 2026-10-19)
+
+  Owner asked about an addon/extension facility for AnkiTov (third-party capabilities without touching core).
+  Session verdict: instinct is right (Anki's 2,000-addon ecosystem is the competitive moat), but in-process
+  third-party plugins at v1.0.0 are premature. Owner said "bring up extensions for consideration in a few months."
+  Recommended staged shape:
+  - Phase 0 (nearly free): formalize INTERNAL trait seams — SchedulingPolicy (formalize the existing
+    ANKITOV_SCHEDULER=in-house|fsrs-rs switch), Importer/Exporter, EventSink/Notifier, ReportRenderer.
+    House style already has Verifier + TelemetryStreamer traits.
+  - Phase 1 (cheap, safe): outbound integrations — domain events (review completed, capsule delivered,
+    deck-health alert) as signed webhooks + read-only REST with scoped API tokens. Third parties extend
+    BESIDE AnkiTov, never inside it.
+  - Phase 2 (later): sandboxed in-process extensions via WASM component model (wasmtime), capability-based
+    permissions, signed catalog, admin-granted permissions. NEVER: dynamic .so loading, embedded
+    Python/Lua with host access, unsigned marketplace.
+  - Cross-cutting: schools threat model (FERPA/COPPA — never raw DB access for third-party code); API
+    stability (v1.0.0 backend still moving fast); 4GB-class deployment footprint; naming (do NOT use
+    "addon" — that means Anki addons, and Phase 6 removed addon terminology from teacher UI; use
+    "extensions"/"integrations"); i18n doctrine (headless extensions first; UI extensions en-US-strings-only).
+
+  ## What to do now
+
+  1. FRESHNESS CHECK — what changed since 2026-10-19 (working dir /Volumes/YBG1TB4Mac/AnkiTov-C):
+     - `jj log` / recent commits on main: any new trait seams, event/hook systems, openapi.rs surface growth,
+       or extension-adjacent work (search backend/src for "pub trait", "webhook", "event").
+     - Whether backend API churn has slowed (a proxy for ABI readiness).
+     - Whether specs/design/2026-07-19-ai-addon-intelligence.md or addon-session-driver evolved.
+     - Product context: release cadence since v1.0.0, any pilot/school feedback requesting customization.
+  2. PRESENT the case to the owner in ~1 screen: the staged plan above, what changed since October
+     (stronger/weaker case), and the specific decision being asked for:
+     greenlight drafting specs/design/extensions-facility.md as a DRAFT spec (same pattern as the
+     auto-update / cultural-localization pair) + TaskMaster task derivation — or defer again.
+  3. Do NOT write any spec or code. This is a bring-up-for-consideration reminder only; the owner decides.
+  4. SELF-REMOVE this schedule (one-shot):
+     - goose schedule remove --schedule-id extensions-facility-review
+     - rm ~/.local/share/goose/scheduled_recipes/extensions-facility-review.yaml  (resurrection gotcha:
+       leaving the scheduled_recipes copy re-registers the schedule)
+     - Keep the source recipe at ~/.local/share/goose/reminders/extensions-facility-review.yaml for reuse.
+  5. End with a one-paragraph summary the owner can read in the session: freshness findings, recommendation,
+     the decision requested.

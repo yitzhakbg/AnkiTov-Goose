@@ -1,0 +1,84 @@
+version: "1.0.0"
+title: "Resume AnkiTov-C GitHub Actions (November minutes reset)"
+description: "One-shot for Nov 1 2026 09:00 — delete the `if: false` pause guards from the 4 AnkiTov-C workflows (re-applied 2026-10-20 as commit 5b588ece), push, verify drift-gate goes green after the Actions minutes reset, catch up the skipped weekly backup, then self-remove."
+instructions: |
+  Follow the procedure in the user's prompt exactly. It is self-contained.
+  Be concise. Use plain Markdown (never JSON-array tables).
+prompt: |
+  DATE GATE: Today's date is in your context. If today is BEFORE 2026-11-01, print
+  exactly one line — "ARMED: actions-resume-20261101 will lift the Actions-quota
+  pause on 2026-11-01 09:00" — and stop. Do nothing else.
+
+  If today is 2026-11-01 or later, run the FULL RESUME PROCEDURE.
+
+  ## Background
+  The yitzhakbg account exhausted its 2,000 free private-repo Actions minutes on
+  2026-10-12 (ub3090-backup zombie runs hanging to the 6-hour job cap). All 4
+  workflows in /Volumes/YBG1TB4Mac/AnkiTov-C were paused with job-level
+  `if: false` guards. The pause was briefly lifted early (401a6d61 — caused
+  instant billing-block failures: jobs died in ~3s with ZERO steps) and
+  RE-APPLIED as commit 5b588ece on 2026-10-20. The billing cycle resets
+  2026-11-01. Public-mirror parity was verified 2026-10-19 (fcf8a91) and only
+  .github/ changed since (not in the export allowlist), so drift-gate is
+  expected GREEN once minutes are available.
+
+  ## Procedure
+  1. cd /Volumes/YBG1TB4Mac/AnkiTov-C && jj git fetch && jj st
+     If remote main advanced beyond local main, reconcile first (remote wins on
+     conflicts). If the working copy has unrelated WIP, run `jj new main` first
+     so the resume commit contains ONLY workflow changes.
+
+  2. Lift the pause — exact reverse of 5b588ece (verified technique):
+     git show 5b588ece -- .github/workflows/drift-gate.yml .github/workflows/docs.yml .github/workflows/publish-docs.yml .github/workflows/ub3090-backup.yml | git apply -R
+     Fallback if the patch does not apply cleanly: in each of the 4 files delete
+     the 3-line pause block (the two `# PAUSED until 2026-11-01 ...` comment
+     lines + the `if: false` line) from the `jobs:` section. KEEP all safety
+     rails (timeout-minutes, tailscale step timeout, ub3090-backup concurrency
+     group).
+
+  3. Verify guards are gone — scope the grep to the 4 files (release.yml line 8
+     mentions `if: false` inside a prose comment; that match is EXPECTED, fine):
+     grep -n "if: false" .github/workflows/drift-gate.yml .github/workflows/docs.yml .github/workflows/publish-docs.yml .github/workflows/ub3090-backup.yml
+     → must return NOTHING. `jj diff --stat` → 4 files, 12 deletions.
+     If the files contain no guards (already resumed earlier), skip to step 6.
+
+  4. Commit + push:
+     jj commit -m "ci: lift the Actions-quota pause — billing cycle reset Nov 1"
+     jj bookmark set main -r @-
+     jj git push --bookmark main
+
+  5. Verify CI (the push triggers drift-gate + docs; ub3090-backup does NOT
+     trigger on push anymore — push trigger removed 2026-10-13):
+     sleep 60; gh run list -R yitzhakbg/AnkiTov-C --limit 5
+     Poll every ~2 min, up to 10 min total. Expect drift-gate → success (~2-4 min).
+     - If a run fails instantly (~3s, ZERO steps executed): the billing block is
+       still active — the quota reset has not landed yet. Do NOT re-pause; the
+       lift commit is correct. Report that, and suggest re-checking later in the
+       day (gh workflow run drift-gate.yml -R yitzhakbg/AnkiTov-C once minutes
+       are available).
+     - If drift-gate fails with a REAL diff (steps actually ran): report the
+       drift to the owner; do not auto-fix, do not re-pause.
+
+  6. Backup catch-up: the weekly ub3090-backup cron (Sundays 02:00 UTC) fired at
+     02:00 UTC today while the guard was still present → skipped, so no Actions
+     backup this week. If step 5 showed drift-gate GREEN (proves minutes are
+     available), dispatch one catch-up run:
+     gh workflow run ub3090-backup.yml -R yitzhakbg/AnkiTov-C
+     Confirm it appears in gh run list (it can take up to 60 min — do NOT wait
+     for completion; verify it started and note the run URL).
+     If drift-gate was billing-blocked, skip this step and say so.
+
+  7. Remind the owner: the ub3090-backup 6-hour hang was only CAPPED, not
+     root-caused — watch the first resumed backup run; if it hangs, suspect an
+     expired UB3090_TAILSCALE_AUTH_KEY (re-issue at Tailscale admin → Keys, then
+     update the repo secret). The separate ub3090-tailscale-key-check schedule
+     no longer exists, so this reminder is the only one.
+
+  8. Report a compact summary: commit sha, CI verdicts, backup dispatch status.
+
+  9. SELF-REMOVE (one-shot):
+     goose schedule remove --schedule-id actions-resume-20261101
+     rm ~/.local/share/goose/scheduled_recipes/actions-resume-20261101.yaml
+     (resurrection gotcha: leaving the scheduled_recipes copy re-registers the
+     schedule). Keep the source at
+     ~/.local/share/goose/reminders/actions-resume-20261101.yaml for reuse.

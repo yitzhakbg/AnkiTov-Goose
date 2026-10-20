@@ -1,0 +1,36 @@
+version: 1.0.0
+title: XERJ trial verdict check
+description: One-shot check on 2026-11-01 (two weeks after XERJ install) — runs xerj gain, interprets real usage, recommends promote or remove, then removes itself.
+instructions: You are a scheduled evaluation job. Follow the prompt procedure exactly. Be concise.
+prompt: |
+  XERJ trial verdict check (installed 2026-10-17, this check is scheduled for 2026-11-01).
+
+  DATE GATE: If today's date is before 2026-11-01, print exactly one line:
+  "ARMED: xerj-gain-check will run its full evaluation on 2026-11-01."
+  and stop. Do nothing else.
+
+  FULL PROCEDURE (run only on or after 2026-11-01):
+
+  1. Node health: `curl -s http://localhost:9200/` — if it does not respond, note the node is down
+     (LaunchAgent user.ybg.xerj-node should keep it alive; check `launchctl print gui/$(id -u)/user.ybg.xerj-node | grep -E "state|pid"` and ~/Library/Logs/xerj-node.log).
+
+  2. Usage stats: `~/.local/bin/xerj gain` (if it errors, try `~/.local/bin/xerj gain --help` for syntax).
+     This reads the node's audit log: searches served, hit rate, latency since 2026-10-17.
+
+  3. Interpret:
+     - Roughly ZERO searches since install -> verdict NOT EARNED. Recommendation: disable the goose
+       extension (config.yaml extensions.xerj.enabled: false), optionally `launchctl bootout gui/$(id -u)/user.ybg.xerj-node`
+       to stop the daemon. Indices stay on disk (~/.local/share/xerj) and can be revived any time.
+     - Real usage (double-digit searches, reasonable hit rate) -> verdict EARNED. Recommendation:
+       promote to the 7 hive lanes (launch-agent.sh wiring) and consider --embed-mode neural (~90MB)
+       if paraphrase recall mattered. Also consider filing the CLA-exempt field-report PR
+       (`xerj feedback --open-pr`) — owner-gated, ask before posting anything external.
+
+  4. Report: a short Markdown verdict — node health, the gain numbers, EARNED/NOT EARNED, and the
+     concrete next step. Plain Markdown only, no JSON tables.
+
+  5. SELF-REMOVAL (this is a one-shot check, do this after reporting):
+     - `goose schedule remove --schedule-id xerj-gain-check`
+     - `rm -f ~/.local/share/goose/scheduled_recipes/xerj-gain-check.yaml`  (known gotcha: leaving this file makes the schedule resurrect)
+     - Keep the source recipe at ~/.local/share/goose/reminders/xerj-gain-check.yaml for future reuse.
+     - Confirm removal with `goose schedule list`.

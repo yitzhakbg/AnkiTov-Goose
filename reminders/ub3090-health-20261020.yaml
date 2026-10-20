@@ -1,0 +1,35 @@
+version: "1"
+title: ub3090-health-20261020
+description: One-shot 20:15 health check + reload of the ub3090 qwen vLLM server (deliberately unloaded earlier today at owner request to free the GPU).
+instructions: Follow the prompt procedure exactly. One-shot schedule — self-remove after reporting.
+prompt: |
+  DATE GATE: get the current date/time. If it is before 2026-10-20 20:00 local time, print exactly:
+  ARMED — ub3090 health check scheduled for 2026-10-20 20:15 — nothing to do yet.
+  and STOP (run no checks).
+
+  Otherwise run the full check.
+
+  CONTEXT: The qwen3.8-27b vLLM server runs on ub3090 as Docker container
+  "qwen38-27b-rtx3090-single-1" (port 100.116.49.86:18020, restart-policy=always).
+  It was deliberately UNLOADED (docker stop) at ~12:50 today at owner request to
+  free the GPU. This 20:15 check verifies health and brings it back if still down.
+
+  STEPS:
+  1. ssh ub3090 'docker ps -a --format "{{.Names}}|{{.Status}}" | grep qwen38-27b-rtx3090-single-1'
+  2. If status shows "Up": server is running. Verify serving:
+     curl -s -m 8 http://100.116.49.86:18020/v1/models  (expect HTTP 200 + qwen3.8-27b)
+     and ssh ub3090 'nvidia-smi --query-gpu=memory.used --format=csv,noheader'
+     Report UP + healthy + VRAM used. If it is UP unexpectedly, note that
+     restart-policy=always means a Docker daemon restart or box reboot auto-started it.
+  3. If status shows "Exited": report it was still unloaded, then RELOAD it:
+     ssh ub3090 'docker start qwen38-27b-rtx3090-single-1'
+     Poll every 15s up to 5 minutes: curl -s -m 8 http://100.116.49.86:18020/v1/models
+     When it returns 200: report RELOADED + healthy + VRAM (expect ~23.4 GB used).
+     If not healthy after 5 minutes: report RELOAD-FAILED and include the last 20 lines of
+     ssh ub3090 'docker logs --tail 20 qwen38-27b-rtx3090-single-1'
+  4. Final one-line verdict: HEALTHY-ALREADY / RELOADED-OK / RELOAD-FAILED.
+  5. SELF-REMOVE (one-shot): run
+     goose schedule remove --schedule-id ub3090-health-20261020
+     AND delete ~/.local/share/goose/scheduled_recipes/ub3090-health-20261020.yaml
+     (resurrection gotcha). Keep the source recipe at
+     ~/.local/share/goose/reminders/ub3090-health-20261020.yaml for reuse.

@@ -83,3 +83,26 @@ These paths are excluded from `tree` and `rg`:
 - `AnkiPlayGround/`, `backend/data/`
 - `*.anki2`, `*.apkg`, `*.ankiaddon`
 - `goose-archive/`
+
+---
+
+## Oct 2026 Ops, Scheduler & VCS Gotchas
+
+### Jujutsu (`jj`) + Git Colocated Repos
+- ❌ `git ls-files -i -t` or bare `git ls-files -i -c` — fails with fatal usage error; repeating a failing command can trigger an auto-compact loop. Always pass `--exclude-standard`: `git ls-files -i -c --exclude-standard`.
+- ❌ `git check-ignore <tracked-file>` — silently skips tracked files unless `--no-index` is passed.
+- ❌ Stale git index after `jj file untrack` — in colocated repos, run `git reset` (mixed, index-only) to resync git's index with jj's tree.
+- ❌ Exporting to the public mirror while `@` has WIP — `scripts/oss/export-ankitov-core.sh` reads disk state; always `jj new -r main` before exporting, and never export directly into `../AnkiTov` (use a temp staging dir + `rsync -a` without `--delete`).
+
+### Goose Scheduler (`goose schedule`)
+- ❌ Putting procedures in recipe `instructions` — the Goose scheduler only injects `prompt` into scheduled runs. Put the full procedure (including any `DATE GATE`) inside `prompt`.
+- ❌ Removing a schedule with `goose schedule remove --schedule-id <id>` alone — leaves `~/.local/share/goose/scheduled_recipes/<id>.yaml` behind, which can resurrect the schedule. Always delete that file too (keep the source copy in `~/.local/share/goose/reminders/`).
+
+### Goose Context Limits & Config
+- ❌ Editing `~/.config/goose/config.yaml` with `sed -i` — `config.yaml` is a symlink to `config-permanent.yaml`; edit `config-permanent.yaml` directly.
+- ❌ Relying on `GOOSE_CONTEXT_LIMIT` in Goose Desktop — Desktop ignores the env var; set per-model `context_limit` in `~/.config/goose/custom_providers/*.json` (precedence #2) and control the auto-compact ceiling with `GOOSE_AUTO_COMPACT_TOKEN_LIMIT` (400000 via LaunchAgent `user.ybg.goose-auto-compact-token-limit`).
+
+### AnkiConnect & Dashboard Surface
+- ❌ Editing `backend/resources/dashboard/index.html` — dead unrouted file; the live teacher/admin console served at `/dashboard` is `backend/resources/dashboard/imp-console.html`.
+- ❌ Passing extra kwargs to AnkiConnect — AnkiConnect strictly validates parameter names (`importPackage` takes `path` only; `deleteDecks` takes `cardsToo`, not `cards`).
+- ❌ Running `cargo nextest` with desktop Anki open on `:8765` without overriding `ANKICONNECT_PORT` — `endpoint_coverage_test` hits the default port and can create stray test decks in the real collection.

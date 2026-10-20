@@ -1,0 +1,43 @@
+version: 1.0.0
+title: AgentOS rollout watch (T-132..T-140)
+description: >
+  Daily 09:00 monitor of the buzz-hive AgentOS upgrade rollout (task board, memory
+  protocol, morning digest — spec specs/plans/agentos-board-memory-digest.md).
+  Date-gated: one armed line before 2026-10-17; full check from 2026-10-17 onward.
+  Reports per-task status, Engineer evidence reports, dispatch-guard state, and
+  rollback RECOMMENDATIONS (never executes reverts itself). Reminds the owner to
+  remove the schedule once T-132..T-140 are all done and verified.
+instructions: |
+  You are a scheduled monitoring job. Follow the prompt exactly. Be brief and factual.
+  Use absolute paths — do not assume a working directory. Strictly read-only except
+  where a step explicitly authorizes a command; never revert, restart, or arm anything.
+prompt: |
+  First run `date "+%Y-%m-%d"` to get today's date.
+
+  DATE-GATE: if today is BEFORE 2026-10-17, reply with exactly one line and stop:
+  "agentos-rollout-watch: ARMED — full checks begin 2026-10-17 (rollout monitoring for T-132..T-140)."
+
+  If today is 2026-10-17 OR LATER, run the full check. HIVE=/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive
+
+  1. HIVE HEALTH: `bash /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/scripts/hive-status.sh` — report relay status + N/7 agents. If unhealthy, run it again with `--fix` and report what it repaired.
+
+  2. BOARD ENDPOINT: `curl -s --max-time 5 http://127.0.0.1:8795/board.json` — if it fails or 404s, the dashboard server has not been restarted with the board endpoints yet (T-132 code committed but not live); note it. If it responds, report card counts by status.
+
+  3. EVIDENCE REPORTS: read #engineering as owner —
+     export BUZZ_PRIVATE_KEY="$(python3 -c "import json;print(json.load(open('/Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/agent-team.json'))['owner']['private_key'])")"
+     export BUZZ_RELAY_URL=ws://100.89.254.76:3000
+     /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/target/release/buzz --format compact messages get --channel 96a36f31-e4cc-465c-8020-ac540488df0a --since <unix timestamp of yesterday 09:00 local>
+     List new messages; identify Engineer evidence for T-132/133/134/135/136 (curl round-trip, concurrent-claim test, board.json done-cap check) and any blockers or failures.
+
+  4. DISPATCH GUARD: `grep -n "DRY_RUN" /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/scripts/board-dispatch.sh` — T-134 must remain DRY_RUN until the OWNER explicitly signs off. Flag LOUDLY if it appears armed without sign-off.
+
+  5. TASK STATE: `grep -E "^- \[.\] T-13[2-9]|^- \[.\] T-140" /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive/specs/tasks.md` — report the checkbox state of each task.
+
+  6. NEW COMMITS: `git -C /Volumes/YBG1TB4Mac/AnkiTov-C/buzz-hive log --oneline -8` — note any commits beyond f614b6ee8.
+
+  7. ROLLBACK ASSESSMENT: if evidence shows the board broken (failed round-trip, lost claims, data loss) or a lane wedged, RECOMMEND the specific repair (e.g. `git revert <sha>` + dashboard server restart, or `hive-status.sh --fix`) but DO NOT execute reverts or restarts yourself — report and wait for the owner.
+
+  8. REPORT: one line per task T-132..T-140 (state + evidence status), then one verdict line: "ON TRACK" or "NEEDS ATTENTION: <specific item>".
+
+  9. EXIT CONDITION: if ALL of T-132..T-140 are ticked done AND evidence is verified AND the T-139 digest schedule is live, print the final rollout summary and remind the owner:
+     "Rollout complete — remove this schedule with: goose schedule remove --schedule-id agentos-rollout-watch"

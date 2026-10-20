@@ -314,18 +314,21 @@ else
 fi
 
 # ------------------------------------------------------------------
-# 12. AnkiTov skills (.agents/skills/)
+# 12. AnkiTov skills (.agents/skills/, ~/.agents/skills/, ~/.config/goose/skills/)
 # ------------------------------------------------------------------
 echo ""
 echo "─── 12. AnkiTov Skills ───"
 if [ -d "$GOOSE_REPO/skills" ]; then
-  # Symlink the entire skills tree (code-review/, etc.)
+  mkdir -p "$HOME/.agents/skills" "$HOME/.config/goose/skills"
+  # Copy/symlink the entire skills tree (including subdirectories like scripts/)
   for dir in "$GOOSE_REPO/skills"/*/; do
     [ -d "$dir" ] || continue
     skill_name=$(basename "$dir")
     mkdir -p "$ANKITOV_REPO/.agents/skills/$skill_name"
+    cp -Rp "$dir"/. "$HOME/.agents/skills/$skill_name/"
+    ln -sfn "$HOME/.agents/skills/$skill_name" "$HOME/.config/goose/skills/$skill_name"
     for f in "$dir"*; do
-      [ -f "$f" ] || continue
+      [ -e "$f" ] || continue
       link "$f" "$ANKITOV_REPO/.agents/skills/$skill_name/$(basename "$f")" "skill "
     done
   done

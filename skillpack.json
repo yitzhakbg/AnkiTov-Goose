@@ -3,6 +3,12 @@
   "author": "AnkiTov operator",
   "license": "UNLICENSED",
   "api_version": "gbrain-skillpack-v1",
-  "description": "AnkiTov goose source-local skills, manifested for shared-skills adoption.",
-  "skills": ["skills/code-review"]
+  "description": "AnkiTov goose source-local skills (code-review, grill, diagnosing-bugs, wizard, writing-for-agents).",
+  "skills": [
+    "skills/code-review",
+    "skills/grill",
+    "skills/diagnosing-bugs",
+    "skills/wizard",
+    "skills/writing-for-agents"
+  ]
 }

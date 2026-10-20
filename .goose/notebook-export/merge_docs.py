@@ -104,7 +104,7 @@ def code_core():
 
 
 OUTPUTS = [
-    ("00-overview.md", ["README.md", "CHANGELOG.md"]),
+    ("00-overview.md", ["README.md", "CHANGELOG.md", "GLOSSARY.md"]),
     ("01-specs-core.md", spec_core),
     ("02-project-knowledge.md", lambda: walk("project-knowledge", suffixes=DOC_SUFFIXES)),
     ("03-docs.md", docs_all),

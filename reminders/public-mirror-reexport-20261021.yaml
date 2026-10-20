@@ -1,0 +1,71 @@
+version: "1.0"
+title: Public mirror re-export (03:00 Oct 21)
+description: >
+  One-shot scheduled job: perform the established safe re-export of AnkiTov-C
+  (private) to the public mirror yitzhakbg/AnkiTov and push, so the mirror is
+  current before the Nov 1 drift-gate resume. Self-removes after running.
+instructions: >
+  Date-gated one-shot. Before 2026-10-21 print the ARMED line and stop.
+  On/after 2026-10-21 03:00 execute the full re-export procedure in the prompt,
+  report a one-line verdict, clean up, and self-remove the schedule.
+prompt: |
+  DATE GATE: If the current date is before 2026-10-21, print exactly:
+  ARMED — public-mirror re-export scheduled for 2026-10-21 03:00 — nothing to do yet.
+  and stop. Do nothing else.
+
+  Otherwise perform the full re-export of AnkiTov-C to the public mirror
+  (yitzhakbg/AnkiTov). Work in /Volumes/YBG1TB4Mac/AnkiTov-C. Follow EXACTLY this
+  procedure (established safe flow, last validated 2026-10-19):
+
+  1. PRECHECKS
+     a. `jj st` in /Volumes/YBG1TB4Mac/AnkiTov-C — if the working copy @ has ANY
+        changes (dirty), run `jj new -r main` first so the disk state = main (the
+        WIP is preserved as its own commit; NEVER export with WIP on disk — the
+        export script reads MONOREPO ROOT DISK STATE and leaks WIP into the mirror).
+     b. `jj git fetch` and verify main == origin/main. If main has unpushed commits,
+        push first (`jj git push --bookmark main`). If network fails, verdict
+        EXPORT-ABORTED-NETWORK, skip to step 5.
+     c. Confirm /Volumes/YBG1TB4Mac/AnkiTov exists, is a git repo, remote origin =
+        https://github.com/yitzhakbg/AnkiTov.git, and `git status --porcelain` there
+        is clean (report any unexpected dirt).
+
+  2. EXPORT (to a TEMP dir — never the mirror checkout itself)
+     a. Get the ref to record: PRIVATE_SHA=$(jj log -r main --no-graph -T 'commit_id.short()')
+     b. Run: cd /Volumes/YBG1TB4Mac/AnkiTov-C && EXPORT_ANKITOV_CORE_YES=1 \
+        ANKITOV_MONOREPO_REF="$PRIVATE_SHA" scripts/oss/export-ankitov-core.sh /tmp/ankitov-export-3am
+        (EXPORT_ANKITOV_CORE_YES=1 skips the interactive confirmation prompt — required
+        for automation; TARGET_DIR is explicit so the default staging dir is not used).
+     c. Check the REAL exit code (${PIPESTATUS[0]} if piped — a `cmd | tail` chain masks failures).
+     d. If it fails at PHASE 4.5 with cargo trying to DOWNLOAD target-gated crates
+        (android_system_properties etc. — registry cache lacks them), run
+        `cargo fetch --locked` inside the staging dir /tmp/ankitov-export-3am (online)
+        and re-run the export command from step 2b.
+     e. The script runs the gitleaks tripwire + checksums itself; it must pass clean.
+        On any failure: verdict EXPORT-FAILED (name the step), do NOT touch the mirror,
+        skip to step 5.
+
+  3. MIRROR UPDATE (rsync -a, NO --delete)
+     a. In /Volumes/YBG1TB4Mac/AnkiTov delete untracked strays if present:
+        .code-graph/ and AnkiPlayGround/ (NEVER commit those).
+     b. rsync -a /tmp/ankitov-export-3am/ /Volumes/YBG1TB4Mac/AnkiTov/   (NO --delete)
+     c. cd /Volumes/YBG1TB4Mac/AnkiTov && git add -A
+        (git add -u MISSES brand-new files — the fsrs follow-up-commit gotcha).
+     d. If `git status --porcelain` is now empty → mirror already in parity:
+        verdict ALREADY-IN-PARITY, skip to step 5.
+     e. git commit -m "mirror: fresh export of AnkiTov-C@$PRIVATE_SHA"
+     f. git push origin main, then verify: git ls-remote origin main matches local main.
+
+  4. REPORT one line:
+     - REEXPORT-OK — mirror@<new-sha> = fresh export of AnkiTov-C@$PRIVATE_SHA (drift-gate
+       is paused with if:false guards until Nov 1; this push burns 0 Actions minutes and
+       the mirror is now ready for the resume), or
+     - ALREADY-IN-PARITY, or
+     - EXPORT-FAILED / EXPORT-ABORTED-NETWORK + the failing step and manual-retry hint
+       (re-run: EXPORT_ANKITOV_CORE_YES=1 scripts/oss/export-ankitov-core.sh /tmp/... then
+       rsync -a into /Volumes/YBG1TB4Mac/AnkiTov, git add -A, commit, push).
+
+  5. CLEANUP + SELF-REMOVE:
+     rm -rf /tmp/ankitov-export-3am
+     goose schedule remove --schedule-id public-mirror-reexport-20261021
+     rm -f ~/.local/share/goose/scheduled_recipes/public-mirror-reexport-20261021.yaml
+     (resurrection gotcha — delete BOTH; this source recipe stays in ~/.local/share/goose/reminders/).
