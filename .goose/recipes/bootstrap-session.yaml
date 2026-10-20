@@ -1,9 +1,25 @@
-version: "1.0.0"
+version: "1.1.0"
 title: "Bootstrap Session"
-description: "Initialize working context from .goose/briefs/latest.md and verify Jujutsu repository state."
+description: "Initialize working context from .goose/briefs/latest.md, enforce the Focus Gate (max 3 active fronts), and verify Jujutsu repository state."
 
 instructions: |
   Initialize working context for a new session efficiently without redundant file reads.
+
+  0. FOCUS GATE (owner directive 2026-10-20 — run this FIRST, before any other step):
+     a. Read `.goose/briefs/latest.md`. It lists the ≤3 ACTIVE FRONTS, PARKED items
+        with re-activation triggers, and pending owner decisions. This same read
+        satisfies step 1 below.
+     b. Classify the operator's opening request:
+        - Serves an ACTIVE FRONT → proceed; name the front in one line.
+        - Matches a pending owner decision → surface it and ask for the decision.
+        - Neither → say so BLUNTLY before doing any work: "This is a new front.
+          You already have 3 active fronts. Name which one this replaces, or I
+          park it with a trigger." Do not soften it. Do not start the new front
+          until the owner chooses.
+     c. Never let active fronts exceed 3. New ideas go to PARKED in latest.md
+        with an explicit trigger — never into a new chat.
+     d. One front per chat: if the conversation drifts toward a second front,
+        flag it and defer it to PARKED.
 
   1. Read `.goose/briefs/latest.md` if it exists to retrieve the previous session's handoff state.
   2. Sync and inspect Jujutsu state via developer shell commands:
@@ -34,3 +50,6 @@ instructions: |
      - Current Working Set (modified/relevant files)
      - Top Priority Immediate Action
   7. Present the summary to the operator and request confirmation before proceeding with work.
+  8. HARD RULE at session close: update `.goose/briefs/latest.md` (debrief-session
+     recipe) so the next chat starts accurate — including moving finished fronts
+     to DONE and promoting at most one PARKED item if a front freed up.
