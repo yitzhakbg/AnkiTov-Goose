@@ -1,0 +1,11 @@
+name: Qwen Chat (slim)
+description: >
+  Low-overhead chat with the local qwen3.8-27b on ub3090.
+  Pins custom_qwen_ub3090 + qwen3.8-27b with only [developer, todo] extensions
+  (excludes memory + heavy MCPs) for a ~2.5K token prompt floor and ~2.3s TTFT.
+  Run bare or ask in plain text — goose recipes take no positional args.
+provider: custom_qwen_ub3090
+model: qwen3.8-27b
+extensions:
+  - developer
+  - todo
