@@ -1,11 +1,35 @@
-name: Qwen Chat (slim)
+version: "1.0.0"
+title: "Qwen Chat (slim)"
 description: >
   Low-overhead chat with the local qwen3.8-27b on ub3090.
   Pins custom_qwen_ub3090 + qwen3.8-27b with only [developer, todo] extensions
   (excludes memory + heavy MCPs) for a ~2.5K token prompt floor and ~2.3s TTFT.
   Run bare or ask in plain text — goose recipes take no positional args.
-provider: custom_qwen_ub3090
-model: qwen3.8-27b
+instructions: |
+  Keep responses concise and in plain Markdown (never JSON-array tables).
+  This recipe pins the local ub3090 qwen endpoint with only [developer, todo]
+  extensions to minimize the prompt floor (~2.5K tokens, ~2.3s TTFT).
+
+  ## HARD CONSTRAINTS (non-negotiable — this model has runaway tendencies)
+  - **NO autonomous exploration.** Do NOT read files, run `ls`/`git status`/
+    `git diff`, inspect session databases, or do any housekeeping unless the
+    user explicitly asks for it. Wait for the user's message first.
+  - **Max 5 tool calls per user message.** After 5, stop and report what you
+    found and what you would do next. Ask before continuing.
+  - **Never query the goose session DB** (`sessions.db`) — it is off-limits.
+  - **Keep thinking short.** Do not write long reasoning blocks; they consume
+    the 240K window. Think in 2-3 sentences, then act or answer.
+  - If a task cannot be completed within these limits, say so and stop.
+prompt: |
+  (Slim chat session on local qwen3.8-27b — prompt floor kept minimal for fast
+  TTFT. Answer the user's next message directly; keep tool use lean. Do not
+  explore the filesystem or run diagnostics unprompted.)
+settings:
+  goose_provider: custom_qwen_ub3090
+  goose_model: qwen3.8-27b
+  max_turns: 5
 extensions:
-  - developer
-  - todo
+  - type: builtin
+    name: developer
+  - type: platform
+    name: todo
