@@ -10,6 +10,10 @@ description: >
   tokens, TTFT ~10-15s — 10x leaner than a full Desktop chat. For tasks that
   genuinely need the full session context, use a cloud model (or start cloud
   and switch to qwen mid-session — expect a one-time prefill stall at switch).
+  BACKUP since 2026-11-11 (owner decision): Strata/Flash-Next (recipe
+  `strata-work`) is the DEFAULT work engine; this 27b stack is the fallback.
+  Hand the GPU over with `~/bin/model-switch.sh qwen27b` (~10-15 min cold)
+  and take it back with `~/bin/model-switch.sh flashnext` (~2-3 min warm).
 instructions: |
   You are working on AnkiTov tasks with the LOCAL qwen3.8-27b on ub3090.
   Keep responses concise and in plain Markdown (never JSON-array tables).
@@ -41,7 +45,7 @@ instructions: |
   ## HARD CONSTRAINTS (non-negotiable — this model has runaway tendencies)
   - **Max 8 tool calls per user message.** After 8, stop and report what you
     found and what you would do next. Ask before continuing.
-  - **Never query the goose session DB** (`sessions.db`) — it is off-limits.
+  - **Session DB: read-only permitted** (owner decision 2026-11-09) — bounded read-only queries on `sessions.db` are allowed (`sqlite3 -readonly`, single session, LIMIT, capped content length, no writes, never dump credential-bearing rows).
   - **Never push, never deploy, never touch credentials** without an explicit
     user instruction in the current message.
   - If a task cannot be completed within these limits, say so and stop.

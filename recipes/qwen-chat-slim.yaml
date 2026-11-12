@@ -16,7 +16,7 @@ instructions: |
     user explicitly asks for it. Wait for the user's message first.
   - **Max 5 tool calls per user message.** After 5, stop and report what you
     found and what you would do next. Ask before continuing.
-  - **Never query the goose session DB** (`sessions.db`) — it is off-limits.
+  - **Session DB: read-only permitted** (owner decision 2026-11-09) — bounded read-only queries on `sessions.db` are allowed (`sqlite3 -readonly`, single session, LIMIT, capped content length, no writes, never dump credential-bearing rows).
   - **Keep thinking short.** Do not write long reasoning blocks; they consume
     the 240K window. Think in 2-3 sentences, then act or answer.
   - If a task cannot be completed within these limits, say so and stop.
