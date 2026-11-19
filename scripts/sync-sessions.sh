@@ -194,11 +194,49 @@ restore() {
   remap_paths
 }
 
+# Explicit foreign-prefix maps: absolute paths from a sibling machine that have
+# a KNOWN local counterpart are rewritten exactly (longest prefix first) instead
+# of relying on the ancestor-walk / $HOME fallback. Keyed by THIS host ($HOST) —
+# each machine declares how the other machines' paths map onto its own.
+foreign_path_map() {
+  case "$HOST" in
+    ybgmacmini)  # laptop (ybgxps) paths -> this Mac
+      printf '%s\n' \
+        '/home/ybg/AnkiTov-C|/Volumes/YBG1TB4Mac/AnkiTov-C' \
+        '/home/ybg/AnkiTov-goose|/Volumes/YBG1TB4Mac/AnkiTov-goose' \
+        '/home/ybg/.buzz|/Users/ybg/.buzz' \
+        '/home/ybg|/Users/ybg'
+      ;;
+    ybgxps)      # this Mac's paths -> laptop
+      printf '%s\n' \
+        '/Volumes/YBG1TB4Mac/AnkiTov-C|/home/ybg/AnkiTov-C' \
+        '/Volumes/YBG1TB4Mac/AnkiTov-goose|/home/ybg/AnkiTov-goose' \
+        '/Users/ybg/.buzz|/home/ybg/.buzz' \
+        '/Users/ybg|/home/ybg'
+      ;;
+  esac
+}
+
+# Rewrite $1 via the explicit map; return 1 when no entry matches.
+map_foreign_path() {
+  local wd="$1" entry from to
+  while IFS= read -r entry; do
+    [ -z "$entry" ] && continue
+    from="${entry%%|*}"; to="${entry#*|}"
+    case "$wd" in
+      "$from")    printf '%s' "$to";              return 0 ;;
+      "$from"/*)  printf '%s' "$to${wd#"$from"}"; return 0 ;;
+    esac
+  done < <(foreign_path_map)
+  return 1
+}
+
 # Rewrite sessions.working_dir to paths that exist ON THIS machine.
 # A synced DB carries the source machine's absolute paths (e.g. /Users/ybg/...
-# on a Mac) which the GUI rejects as "Invalid directory path". For each distinct
-# working_dir we walk up to the nearest existing ancestor; if none exists (e.g.
-# a foreign home), we fall back to $HOME. Content is untouched — only the path.
+# on a Mac) which the GUI rejects as "Invalid directory path". Explicit
+# cross-machine maps (foreign_path_map) are applied first; anything unmapped
+# walks up to the nearest existing ancestor; if none exists (e.g. a foreign
+# home), we fall back to $HOME. Content is untouched — only the path.
 remap_paths() {
   local db="$STORE_DIR/sessions.db"
   [ -f "$db" ] || die "No live DB at $db (run restore first)."
@@ -209,7 +247,9 @@ remap_paths() {
   while IFS= read -r wd; do
     [ -z "$wd" ] && continue
     local target="" p="$wd"
-    if [ -d "$wd" ]; then
+    if target="$(map_foreign_path "$wd")"; then
+      : # explicit cross-machine map hit — use it verbatim
+    elif [ -d "$wd" ]; then
       target="$wd"
     else
       # walk up to nearest existing ancestor
