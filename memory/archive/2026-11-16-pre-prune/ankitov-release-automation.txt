@@ -1,0 +1,2 @@
+# ankitov release-autolaunch watcher launchd
+Release watcher `/Users/ybg/bin/ankitov-release-autolaunch.sh` (LaunchAgent `user.ybg.ankitov-release-watch`, 900s, state `~/.local/state/ankitov-release-watch/state`, log `~/Library/Logs/ankitov-release-watch.log`) polls `yitzhakbg/AnkiTov/releases/latest` and auto-deploys stable releases to Mac (`/Applications/AnkiTov.app` w/ `.prev` rollback) + Hetzner (`ssh hetzner`, `~/ankitov-app/current` symlink + keepalive). Setup contract: `GET /api/v1/setup/status` -> `setup_required:true` when 0 admins.

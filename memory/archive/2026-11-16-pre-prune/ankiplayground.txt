@@ -1,0 +1,49 @@
+# ankiplayground profiles data-generation classroom-simulation
+# AnkiPlayGround Profiles Update (2026-07-17)
+- Ran `profiles_update.py` (v2 — Classroom Profile Updater) on 2026-07-17
+- Located at: `/Volumes/YBG1TB4Mac/AnkiTov/AnkiPlayGround/profiles_update.py`
+- All 28 profiles regenerated with realistic classroom practice data for July 10-14, 2026
+- Backups saved as `collection.anki2.bak` per profile
+- Seed: `random.seed(42)`
+
+## Archetype Summary
+- **Star Students (5):** Aisha Patel, Hana Yoshida, Maya Chen, Nia Jackson, Jasmine Nguyen — ~1,200–1,600 reviews, near-daily practice
+- **Consistent (7):** Ella Johansson, James Park, Priya Sharma, Noah Torres, Zoe Okafor, Carla Mendez, Layla Haddad — ~550–1,100 reviews, occasional skip
+- **Weekend Skippers (4):** Lucas Kim, Sofia Lima, Oscar Lindqvist, Quinn Sanders — ~270–770 reviews, skip weekends
+- **Inconsistent (5):** Diego Ramirez, Amir Hassan, Ibrahim Sow, Riku Tanaka, George Thompson — 0–388 reviews, sporadic binges
+- **Struggling (4):** Fatima Al-Rashid, Marcus Webb, Petra Novak, Ben Carter — 0–300 reviews, high lapse rate
+- **New Joiners (2):** Emma Wilson, Kevin O'Brien — ~267–387 reviews, lower card pools
+- **Drop-off (1):** User 1 — 0 reviews, stopped entirely
+
+# ankiplayground profiles profiles-update
+# AnkiPlayGround Profiles Update (2026-07-19)
+- Ran `profiles_update.py` (v2 — Classroom Profile Updater) on 2026-07-19 at 00:00
+- Located at: `/Volumes/YBG1TB4Mac/AnkiTov/AnkiPlayGround/profiles_update.py`
+- All 28 profiles regenerated with realistic classroom practice data for July 10-14, 2026
+- Backups saved as `collection.anki2.bak` per profile
+- Seed: `random.seed(42)`
+- **Star Students (5):** Aisha Patel (1,480 reviews), Hana Yoshida (1,592), Maya Chen (1,562), Nia Jackson (1,187), Jasmine Nguyen (1,256) — near-daily practice
+- **Consistent (7):** Ella Johansson (482), James Park (1,015), Priya Sharma (768), Noah Torres (805), Zoe Okafor (1,066), Carla Mendez (1,051), Layla Haddad (488) — varying skip patterns
+- **Weekend Skippers (4):** Lucas Kim (690), Sofia Lima (686), Oscar Lindqvist (745), Quinn Sanders (672) — skip weekends
+- **Inconsistent (5):** Diego Ramirez (422), Amir Hassan (179), Ibrahim Sow (0), Riku Tanaka (0), George Thompson (165) — sporadic binges
+- **Struggling (4):** Fatima Al-Rashid (146), Marcus Webb (143), Petra Novak (161), Ben Carter (162) — high skip rate
+- **New Joiners (2):** Emma Wilson (65), Kevin O'Brien (198) — lower volume
+- **Drop-off (1):** User 1 — 0 reviews, stopped entirely
+- No errors reported — all 28 profiles processed successfully
+
+# profiles ankitov playground
+# AnkiPlayGround Profiles Update (2026-07-19)
+- Ran `profiles_update.py` (v2 — Classroom Profile Updater) on 2026-07-19
+- Located at: `/Volumes/YBG1TB4Mac/AnkiTov/AnkiPlayGround/profiles_update.py`
+- All 28 profiles regenerated with realistic classroom practice data for July 10-14, 2026
+- Backups saved as `collection.anki2.bak` per profile
+- Seed: `random.seed(42)`
+- **Star Students (5):** Aisha Patel, Hana Yoshida, Maya Chen, Nia Jackson, Jasmine Nguyen — ~1,200–1,600 reviews, near-daily practice
+- **Consistent (7):** Ella Johansson, James Park, Priya Sharma, Noah Torres, Zoe Okafor, Carla Mendez, Layla Haddad — ~550–1,100 reviews, occasional skip
+- **Weekend Skippers (4):** Lucas Kim, Sofia Lima, Oscar Lindqvist, Quinn Sanders — ~270–770 reviews, skip weekends
+- **Inconsistent (5):** Diego Ramirez, Amir Hassan, Ibrahim Sow, Riku Tanaka, George Thompson — 0–388 reviews, sporadic binges
+- **Struggling (4):** Fatima Al-Rashid, Marcus Webb, Petra Novak, Ben Carter — 0–300 reviews, high lapse rate
+- **New Joiners (2):** Emma Wilson, Kevin O'Brien — ~267–387 reviews, lower card pools
+- **Drop-off (1):** User 1 — 0 reviews, stopped entirely
+- No errors reported — all 28 profiles processed successfully
+

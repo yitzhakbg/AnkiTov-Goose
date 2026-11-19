@@ -1,0 +1,2 @@
+# reddit outreach subscope harken t129 doctrine
+F6 Reddit outreach (`buzz-hive/specs/plans/tool-scouting-f6-reddit-outreach.md`, task T-129 on OWNER HOLD until 2026-11-05): port `dancolta/subscope` (keyless public RSS, BUYER/AUTHORITY split); trial `VladUZH/harken` for HN/Bluesky/SO/RSS (not Reddit OAuth). Binding doctrine: NEVER auto-post (manual owner posting only), reply-first link-second, Claim Ledger = 'SRS works' only, SRS beside teaching never inside lesson, ~80% authority / ~20% buyer-pilot.

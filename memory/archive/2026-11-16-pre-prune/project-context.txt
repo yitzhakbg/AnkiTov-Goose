@@ -1,0 +1,38 @@
+# imp-console management-console ui progressive-search
+# IMP Console Features (as of 2026-07-13)
+- Served at `/imp-console` via Loco.rs (compiled into backend binary)
+- Sidebar with 4 sections: Study Session (Phase 3), Weekly Progress (Phase 4), Student Progress (Phase 4), AI Chatbox
+- Collapsible sidebar toggle button (◀/▶) — fixed-position outside sidebar, slides with it
+- Progressive student search in Student Progress page — type-ahead fetches from /compliance/students?q=...
+- Backend endpoint GET /api/v1/management/compliance/students?q=... with LIKE pattern matching
+- CORS middleware (tower-http) with allow-origin: *
+- All API calls use relative URLs (/api/v1/management/...) for production readiness
+- Friendlier terminology: "Study Session" instead of "Capsule", "Progress" instead of "Compliance"
+- Original dashboard preserved at /dashboard with IMP Console linked in sidebar
+
+# gui-rewire-v2 status overview
+# GUI Rewire v2 Status (as of 2026-07-15)
+- Phase 4c COMPLETE. All 10 screens functional in Management Console.
+- Classes: full CRUD, bulk import (scan folder + enroll), roster with multi-select/shift-click, move/remove students, display names.
+- Backend: classes + class_enrollments tables, 8 class endpoints, 4 student endpoints. No FK to users table (student IDs are free-form slugs). Insert-or-skip for bulk enroll.
+- Deck upload: raw bytes to POST /management/decks (not multipart).
+- Known bugs resolved: duplicate Router, orphaned functions, deck upload endpoint, FK constraint on bulk import, class edit using wrong HTTP method.
+- PENDING: Filesystem abstraction — hide all Anki base directory paths, collection.anki2, folder structures from teachers. Design decisions deferred.
+
+# project-context file-locations
+Management Console GUI file: ~/.local/share/goose/apps/ankitov-management-console-v2.html (served via Loco.rs at /imp-console, compiled from resources/dashboard/imp-console.html). Backend controllers: controllers/management/classes.rs, controllers/management/students.rs. Migrations: m20260714_create_classes.rs, m20260714_add_display_name.rs. Entities: models/entities/class.rs, models/entities/class_enrollment.rs. Routes registered in app.rs under /api/v1/management/ prefix.
+
+# ankitov ankitoy profiles playground data-generation
+# AnkiPlayGround Profiles Update (2026-07-17)
+- Ran `profiles_update.py` on 2026-07-17 to regenerate all 28 student profiles with realistic classroom practice data for Jul 10–14.
+- Star Students (5): ~1,200–1,600 reviews each, nearly daily practice
+- Consistent Practicers (7): ~500–1,100 reviews, occasional missed day
+- Weekend Skippers (4): ~700 reviews, skipped Sat/Sun, solid weekday
+- Inconsistent/Binge (5): 0–400 reviews, sporadic catch-up patterns
+- Struggling/At-Risk (4): ~150 reviews, many skipped days, heavy lapses
+- New Joiners (2): ~65–200 reviews, lower volume
+- Drop-off (1): 0 reviews (User 1, completely inactive)
+- Script location: /Volumes/YBG1TB4Mac/AnkiTov/AnkiPlayGround/profiles_update.py
+- Backups saved as collection.anki2.bak for each profile
+- No errors reported — all 28 profiles processed successfully
+

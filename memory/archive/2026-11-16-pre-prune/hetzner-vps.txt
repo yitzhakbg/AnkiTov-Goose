@@ -1,0 +1,2 @@
+# hetzner vps ankitov-hel1 tailscale hcloud
+Hetzner VPS `ankitov-hel1` (Ubuntu 26.04, 4GB, hel1, public 37.27.146.14, Tailscale 100.95.245.116, ssh alias `hetzner`, creds `~/.hetzner/credentials` + Keychain `Hetzner_API_Key`, `hcloud` CLI context `ankitov`): default AnkiTov backend at http://100.95.245.116:5150 (`~/ankitov-app/current`, data `~/.local/share/ankitov`, ufw blocks public :5150). Managed by `~/bin/ankitov-release-autolaunch.sh`. Legacy ub3090 native instance (100.116.49.86:5150) kept as unmanaged fallback.

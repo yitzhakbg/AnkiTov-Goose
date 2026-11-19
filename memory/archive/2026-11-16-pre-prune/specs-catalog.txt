@@ -1,0 +1,2 @@
+# specs catalog auto-update localization buzz-gotcha
+AnkiTov-C `specs/` holds audits/, design/, plans/, research/, launch/, outreach/, localization/. Approved 2026-10-17 (commit e6e0bef6): `2026-10-15-auto-update.md` (opt-out, admin-only, GitHub API Phase 1, auto macOS .app swap) + `2026-10-15-cultural-localization.md` (3-tier transcreation, es/de/fr next, Western digits in ar, `specs/localization/glossary.csv`). BUZZ CLI GOTCHA: `buzz users get --name` needs exact display_name (`"Task Master"` with space); `--mention` takes hex pubkey; `--content` flag required.

@@ -1,0 +1,15 @@
+# rclone gdrive oauth backup disaster-recovery resolved
+rclone gdrive remote migration to own OAuth client — DONE 2026-10-11 19:02:
+- Root cause of the 3-hour "OAuth client was not found" saga: MY OCR misread of the screenshot credentials (2 transposed chars in client_id: tupcmft1ntrvp7l8 → tupcmtf1ntvrp7l8; secret EPIM → EPlM, capital-I vs lowercase-l). NOT propagation delay. Lesson: never transcribe credentials from screenshots — get them pasted as text.
+- Working credentials (user-pasted as text): REDACTED from repo copy - live in ~/.config/rclone/rclone.conf + DISASTER-RECOVERY.md Appendix B (owner-approved storage)
+- Remote `gdrive:` re-authed under own client (root_folder_id 1DlvAUG4M-aGGI307kIXWXZfp-55mTRxp unchanged). Verified: lsf works, shared-client_id retirement NOTICE gone, write test (copyto/cat/deletefile) passed. Token in ~/.config/rclone/rclone.conf — include in next env-deploy capture.
+- Gotcha for future reconnects: `rclone config reconnect` prompts twice (refresh? + use-browser?) — feed `printf 'y\ny\n'`; also kill stale `lsof -ti :53682` first (bind conflict).
+- DISASTER-RECOVERY.md Appendix B has real credentials in ALL copies: local master + bundles 20261010-232116, 20261011-151409, 20261011-185917 (ub3090 backup bundle — was captured from stale PENDING template, filled manually) — all 4 uploaded to Drive and verified by cat-grep.
+- API-key path impossible for Drive private data (OAuth only). Service account = only browser-free alternative; parked unless headless automation (ub3090/GitHub Actions) needs to push backups.
+
+
+--- RESOLVED 2026-10-11 ~18:59 (chain completed) ---
+- Propagation finished; reconnect + user Allow completed; gdrive: auth WORKS (live-verified 2026-10-12).
+- Backup chain ran automatically: fresh bundle goose-env-ybgmacmini-20261011-185917 (382M, incl. rclone.tar with the OAuth token) captured 18:59 and uploaded to gdrive: in 38s. Drive root now has all 3 bundles: 20261010-232116, 20261011-151409, 20261011-185917.
+- env-deploy.sh v2026-10-11.1 now captures rclone.tar on every run (DR §2 satisfied permanently).
+- Watcher/backup-auto scripts (/tmp/rclone-oauth-watch.sh, /tmp/gdrive-backup-auto.sh) exited; logs in /tmp/*.log. No further action needed.

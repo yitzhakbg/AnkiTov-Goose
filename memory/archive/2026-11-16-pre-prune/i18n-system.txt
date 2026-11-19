@@ -1,0 +1,160 @@
+# i18n internationalization translation localization rtl multilingual
+# AnkiTov i18n System — Complete Reference (2026-07-19)
+
+## Documentation Files
+- **Field inventory (master doc):** `workspace/i18n-field-inventory.md` — 496 lines covering method, 11 languages, screen-by-screen field map, hard requirement, workflow, apparatus
+- **Validation script:** `tools/validate_i18n.py` — checks all keys present in all locales, wired in HTML
+
+## Architecture
+- **Frontend:** `resources/dashboard/locales/{code}.json` (315 keys per language) + `i18n.js` runtime (t() function, data-i18n binding, RTL toggle) + `rtl.css` (directional styles)
+- **Backend:** `backend/i18n/{code}/main.ftl` (38 Fluent messages per language) + `src/i18n.rs` (compile-time Fluent loader, runtime override, RTL detection)
+- **API endpoints:** `GET /api/v1/locale`, `GET /api/v1/locale/info`, `GET /api/v1/locale/list`, `POST /api/v1/locale/set`
+
+## Languages (11 total)
+en-US (LTR), ar (RTL), he (RTL), fr (LTR), es (LTR), de (LTR), it (LTR), ru (LTR), zh (LTR), ko (LTR), ja (LTR)
+
+## Binding Patterns
+- **Static HTML:** `<element data-i18n="key">Fallback</element>` — picked up by I18n.refresh()
+- **Dynamic JS:** `el.textContent = t('key')` or `\`${t('key')}\`` — for template-generated content
+
+## Hard Requirement
+- Every UI string must have an i18n key (data-i18n or t())
+- Every key must exist in ALL locale files
+- Field inventory must be updated on every add/change/remove
+- Workflow: Add → Translate (all locales) → Wire → Document → Validate → Commit
+- Run `python3 tools/validate_i18n.py` before any PR touching i18n
+
+## Adding a New Language
+1. Create backend/i18n/{code}/main.ftl (38 messages)
+2. Create resources/dashboard/locales/{code}.json (315 keys)
+3. Add to SUPPORTED_LOCALES in src/i18n.rs
+4. Add handler + route in src/controllers/dashboard.rs
+5. Add route in src/app.rs
+6. Add <option> in HTML language switcher
+7. Add to RTL list in i18n.js if applicable (only ar, he are RTL)
+8. Update inventory document
+9. Run validator
+10. cargo check && cargo test
+11. Commit
+
+# AnkiTov i18n System — Complete Reference (2026-07-20)
+
+## Architecture
+- **Backend (Rust):** Fluent (.ftl) files compiled into binary via fluent-templates + i18n-embed at build time. Runtime override via header.
+- **Frontend (JS/HTML):** JSON locale files loaded at runtime via i18n.js module. data-i18n attributes for static, t() function for dynamic.
+- **RTL Support:** rtl.css (250 lines) toggled via .rtl class on body. Detected automatically from locale direction.
+
+## Supported Locales (11)
+en-US (LTR), ar (RTL), he (RTL), fr, es, de, it, ru, zh, ko, ja
+
+## File Inventory
+**Backend:**
+- `backend/i18n/{code}/main.ftl` — 38 Fluent messages per locale
+- `backend/src/i18n.rs` — static_loader!, t(), t_with(), is_rtl(), SUPPORTED_LOCALES
+- `backend/src/controllers/locale.rs` — API endpoints (GET /locale, POST /locale/set, GET /locale/info, GET /locale/list)
+- `backend/src/controllers/dashboard.rs` — serves locale JSON files
+- `backend/src/app.rs` — registers locale routes
+
+**Frontend:**
+- `backend/resources/dashboard/locales/{code}.json` — 315 keys per locale
+- `backend/resources/dashboard/i18n.js` — t(), I18n.refresh(), RTL toggle, locale detection
+- `backend/resources/dashboard/rtl.css` — directional overrides (~250 lines)
+- `backend/resources/dashboard/imp-console.html` — main dashboard, all screens translated
+
+**Documentation & Tools:**
+- `workspace/i18n-field-inventory.md` — 496 lines, master tracking doc (method, hard requirement, inventory, workflow)
+- `tools/validate_i18n.py` — validates all keys present in all locales, wired in HTML
+
+## Hard Requirements
+1. Every UI string must have an i18n key (data-i18n or t())
+2. Every key must exist in ALL locale files (315 keys × 11 locales = 3,465 total)
+3. Field inventory must be updated on every add/change/remove
+4. Run validate_i18n.py before any PR touching i18n
+5. All new locales must include the 315 base keys + any new keys
+
+## Translation Workflow
+1. Add key to main.ftl (backend) and JSON files (frontend) for en-US
+2. Generate translations for all other locales (via LLM or translator)
+3. Wire into imp-console.html (data-i18n for static, t() for dynamic)
+4. Update i18n-field-inventory.md
+5. Run python3 tools/validate_i18n.py
+6. cargo check && restart server
+7. Test in all locales, especially RTL (ar, he)
+8. Commit with descriptive message
+
+## Dynamic Content Pattern
+- Static HTML: `<span data-i18n="key">Fallback</span>` — picked up by I18n.refresh()
+- Dynamic JS: `el.textContent = t('key')` — for template-generated content, alerts, prompts
+- After dynamic content insertion: call `I18n.refresh()` to apply data-i18n attributes
+- For locale switching: reload locale JSON, call I18n.refresh(), toggle .rtl class
+
+## Key Screens Translated
+- Dashboard (greeting, metrics, sections)
+- Study Session (labels, placeholders, buttons, JS prompts, celebration card)
+- Classes (buttons, modals: Create, Bulk Import, Create Profiles, Populate Decks, Roster)
+- Decks (upload zone, action buttons, distribute modal)
+- Tracks & Profiles (tabs, buttons, empty states, JS prompts)
+- Compliance (weekly + student tabs, filters, table headers)
+- Class Insights (class selector, metrics, retention curve labels)
+- Sync (server status, user table, trigger button)
+
+## Known Issues Resolved
+- Route ordering: static assets now served before imp-console.html
+- Raw key display: all buttons use correct t() calls
+- Missing keys in new locales: filled with English placeholders then translated
+- cargo check failures: fixed unic_langid imports, static loader config
+- RTL layout: .rtl class properly flips margins/padding/flex-direction
+
+## Current State
+- All 11 languages fully wired and tested
+- Server running at localhost:5150
+- All work committed and pushed to origin/main
+- Field inventory and validation script in place
+- Ready for additional locales (just add to SUPPORTED_LOCALES, create .ftl + .json files, wire into HTML)
+
+# i18n hard-requirement translation-gate non-latin
+# Non-Latin Translation Gate (HARD REQUIREMENT — established 2026-07-21)
+
+## The Rule
+For every non-Latin-alphabet locale (ar, he, ru, zh, ko, ja), ALL display values in both JSON frontend files and FTL backend files must be translated. NO English words may appear in display values.
+
+## What counts as "English"
+Any sequence of 2+ consecutive ASCII letters (a-z, A-Z) that isn't one of the allowed non-translateable tokens.
+
+## Allowed non-translateable tokens (exempt from the check)
+- Brand names: AnkiTov, Anki
+- File extensions: apkg, xlsx, csv, tsv, CSV, TSV
+- Units: MB, min
+- Keyboard keys: Shift, Enter, Ctrl, Alt, Tab, Esc, Escape
+- Common abbreviations: ID, AI, URL, FAQ
+- HTML tag names: h2, h3, p, ol, li, ul, strong, em, div, span, table, tr, th, td, etc.
+- HTML entities: amp, nbsp, lt, gt, quot, apos
+- HTML attribute values: help, note, help-note, help-table
+- Template variable names: count, name, decks, classes, query, created, skipped, enrolled, column, reason, page, days, capsules, entity, detail, etc.
+
+## How to check
+Run `python3 tools/validate_i18n.py` — this scans all non-Latin locales for untranslated English and exits with code 2 if any are found.
+
+## When to enforce
+This check runs on every translation operation and on demand. It is a HARD GATE — no commit that introduces untranslated English in a non-Latin locale may proceed.
+
+## Current status (as of 2026-07-21)
+All 6 non-Latin locales have ~61-72 untranslated keys each (frontend JSON) plus 15 untranslated keys each (backend FTL). These need to be translated before the gate can pass.
+
+# i18n hard-requirement translation-gate non-latin completed
+# Non-Latin Translation Gate Status — UPDATED 2026-07-21
+
+## Current status
+All 6 non-Latin locales (ar, he, ru, zh, ko, ja) now PASS the Non-Latin Translation Gate:
+- **Frontend JSON**: ✅ All 6 locales fully translated (0 untranslated keys)
+- **Backend FTL**: ✅ All 6 locales clean (0 untranslated keys)
+
+## Translations applied
+- 509 total translations across 6 languages
+  - 419 frontend JSON key updates
+  - 90 backend FTL key updates
+- Categories translated: `ai.*`, `classInsights.*`, `compliance.*`, `dashboard.*`, `empty.*`, `help.article.*.title`, `help.tip.*`, `import.*`, `sidebar.help`, `studySession.*`, `tracks.promptTagFilter`, `import-file-*` (FTL)
+
+## Enforcement
+`python3 tools/validate_i18n.py` exits cleanly for the Non-Latin gate (exit code 2 if untranslated English found). This is a HARD REQUIREMENT for any future translation work.
+

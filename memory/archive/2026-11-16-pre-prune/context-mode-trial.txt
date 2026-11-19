@@ -1,0 +1,2 @@
+# context-mode trial mcp goose-schedule
+`context-mode` (`/opt/homebrew/bin/context-mode` v1.0.169, ELv2 — dev-only, do NOT embed in product) enabled in `~/.config/goose/config.yaml` with routing nudge `~/.config/goose/context-mode-routing.md` (`GOOSE_MOIM_MESSAGE_FILE`). One-shot schedule `context-mode-ctx-stats` fires 2026-10-24 09:00 to check `context_mode__ctx_stats` and either keep (>5% savings) or rollback.

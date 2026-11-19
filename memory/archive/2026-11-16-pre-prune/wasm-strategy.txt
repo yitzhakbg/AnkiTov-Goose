@@ -1,0 +1,29 @@
+# wasm architecture ankitov-core scheduled
+# WASM Strategy for AnkiTov (Decided 2026-07-13)
+
+## Core Principle
+WASM is a tactical tool for the PWA, NOT a strategic rewrite. The backend stays native because it manages real Anki instances (rusqlite FFI, process spawning, AnkiConnect on localhost).
+
+## What Extracts to WASM
+- `fsrs_sort.rs` — Pure math: D/S retrieval, urgency sort
+- `capsule_slicer.rs` — Pure logic: card pool slicing, spill-to-next
+- `track_health.rs` — Data transformations, aggregation logic
+
+## What Stays Native
+- `forensic_reader.rs` (rusqlite FFI — can't WASM)
+- `anki_launcher.rs` (process spawn — can't WASM)
+- `anki_connect.rs` (localhost HTTP to Anki — can't WASM)
+- `capsule_generator.rs` (orchestrates DB + services)
+- `deck_health.rs` (composes forensic + AnkiConnect)
+- `telemetry_ingestor.rs`, `audit_logger.rs` (SeaORM writes)
+- `rig_nlu.rs` (Rig pipeline, experimental WASM)
+
+## Scheduled Task
+Recipe `scaffold-ankitov-core.yaml` scheduled for 2026-08-13 22:05.
+Creates `crates/ankitov-core/` with crate-type = ["rlib", "cdylib"].
+Minimal deps: serde, serde_json, chrono, wasm-bindgen (feature-gated).
+No loco-rs, sea-orm, rusqlite, reqwest, tokio in the shared crate.
+
+## Rationale
+Selkies streaming model means the PWA is the only browser layer. WASM there provides instant FSRS/capsule preview without server round-trips. Backend remains the native orchestration layer it was designed to be.
+

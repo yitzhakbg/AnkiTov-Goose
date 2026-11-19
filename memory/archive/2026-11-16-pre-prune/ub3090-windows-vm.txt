@@ -1,0 +1,2 @@
+# ub3090 windows-vm dockur rebuild
+Windows 11 VM on ub3090 (dockur/windows container `windows`, 4 vCPU, 8G RAM, 80G sparse `/home/ybg/windows-vm/data.img` ~16G real). Tailscale-only: http://100.116.49.86:8006 (noVNC web) + 100.116.49.86:3389 (RDP client only; creds in `~/windows-vm/windows.creds` 0600 on box, backed up in phase-5 secrets). Disposable by design — if broken, rebuild via `ub3090-recovery/scripts/windows-vm-rebuild.sh` (docs: `ub3090-recovery/docs/WINDOWS-VM-REBUILD.md`).
