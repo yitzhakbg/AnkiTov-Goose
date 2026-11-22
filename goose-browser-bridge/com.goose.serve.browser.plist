@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>GOOSE_DISABLE_KEYRING</key>
+		<string>true</string>
+		<key>GOOSE_MODE</key>
+		<string>approve</string>
+		<key>GOOSE_SERVER__SECRET_KEY</key>
+		<string>REPLACE_WITH_HEX_SECRET</string>
+	</dict>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>com.goose.serve.browser</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Applications/Goose.app/Contents/Resources/bin/goose</string>
+		<string>serve</string>
+		<string>--platform</string>
+		<string>desktop</string>
+		<string>--host</string>
+		<string>127.0.0.1</string>
+		<string>--port</string>
+		<string>3285</string>
+		<string>--allowed-origin</string>
+		<string>chrome-extension://nikomcggdfofalccohegdmmejkgcigce</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/ybg/Library/Logs/goose-serve-browser.err.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/ybg/Library/Logs/goose-serve-browser.out.log</string>
+</dict>
+</plist>

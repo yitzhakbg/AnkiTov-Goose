@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Goose Bridge",
+  "version": "0.2.0",
+  "description": "Attach your browser sidebar directly to Goose via ACP on a dedicated local server.",
+  "permissions": ["sidePanel", "tabs", "contextMenus", "storage"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Open Goose Sidebar" },
+  "side_panel": { "default_path": "sidepanel.html" }
+}

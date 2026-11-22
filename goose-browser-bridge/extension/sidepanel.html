@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Goose Bridge</title>
+  <style>
+    :root { color-scheme: dark; font: 13px/1.45 system-ui, -apple-system, sans-serif; }
+    body { margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; gap: 8px; background: #141416; color: #e6e6e8; }
+    .row { display: flex; gap: 6px; align-items: center; }
+    input, select, textarea, button { font: inherit; background: #1f2024; color: inherit; border: 1px solid #32343c; border-radius: 6px; padding: 6px 8px; }
+    button { cursor: pointer; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.primary, a.handoff { background: #2b59c3; border-color: #2b59c3; color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 6px; text-align: center; white-space: nowrap; }
+    a.handoff[aria-disabled="true"] { opacity: 0.4; pointer-events: none; }
+    #log { flex: 1; overflow-y: auto; border: 1px solid #2a2b31; border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-word; }
+    .msg-user { color: #8ab4f8; margin: 8px 0 4px; }
+    .msg-agent { margin: 4px 0 8px; }
+    .msg-thought { color: #7e848d; font-style: italic; font-size: 12px; margin: 2px 0; }
+    .msg-tool { color: #9aa0a6; font-size: 12px; margin: 3px 0; }
+    .msg-warn { color: #f6ad55; font-size: 12px; margin: 4px 0; }
+    .perm { border: 1px solid #d97706; background: #261b0e; border-radius: 6px; padding: 8px; margin: 8px 0; }
+    .perm-title { font-weight: 600; margin-bottom: 4px; }
+    .perm-detail { font-family: ui-monospace, monospace; font-size: 11px; color: #cbd5e1; max-height: 120px; overflow: auto; margin-bottom: 6px; }
+    .perm .row { margin-top: 6px; flex-wrap: wrap; }
+    details summary { cursor: pointer; color: #9aa0a6; font-size: 12px; user-select: none; }
+    .meta-bar { font-size: 11px; color: #9aa0a6; display: flex; justify-content: space-between; gap: 6px; }
+    textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <select id="sessions" style="flex:1; min-width: 0;"><option value="">Not connected</option></select>
+    <button id="refreshBtn" title="Refresh session list">↻</button>
+    <button id="newBtn" title="New session">+ New</button>
+    <a id="handoff" class="handoff" href="#" aria-disabled="true" title="Open in Goose Desktop">Desktop ↗</a>
+  </div>
+
+  <div class="meta-bar">
+    <span id="modeBadge">mode: —</span>
+    <span id="cwdBadge" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">cwd: —</span>
+  </div>
+
+  <details id="cfgBox">
+    <summary>Connection (<span id="status">disconnected</span>)</summary>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+      <input id="wsUrl" placeholder="ws://127.0.0.1:3285/acp" />
+      <input id="secret" type="password" placeholder="GOOSE_SERVER__SECRET_KEY" />
+      <input id="cwd" placeholder="Default cwd for +New (e.g. /Volumes/YBG1TB4Mac/AnkiTov-C)" />
+      <input id="replayTail" type="number" min="0" step="1" placeholder="Replay tail messages on load (default 20, 0 = all)" />
+      <button id="connectBtn">Save & Connect</button>
+    </div>
+  </details>
+
+  <div id="log"></div>
+
+  <div class="row">
+    <button id="tabBtn">+ Current Tab</button>
+    <button id="cancelBtn" style="margin-left:auto" disabled>Stop</button>
+  </div>
+  <textarea id="prompt" placeholder="Prompt goose… (⌘+Enter to send)"></textarea>
+  <button id="sendBtn" class="primary">Send</button>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
