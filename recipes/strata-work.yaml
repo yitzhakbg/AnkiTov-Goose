@@ -1,20 +1,21 @@
-version: "1.0.0"
+version: "1.1.0"
 title: "Strata Work (default engine)"
 description: >
   AnkiTov work sessions on the ADOPTED default engine: Qwen3.8-Flash-Next
   (180B-A~5B MoE, IQ2_XS) served by Strata on ub3090 — the deep-context
-  workhorse: 256k window (compaction ~210k), ~76 tok/s decode at depth,
-  ~2s/4k prefill. OWNER DECISION 2026-11-11: Strata is the default;
-  qwen3.8-27b vLLM is the one-command BACKUP
-  (`~/bin/model-switch.sh qwen27b` to hand over the GPU, `flashnext` to take
-  it back — unload ~seconds, reload ~2-3 min warm / up to ~15 min cold,
-  warm prefix cache lost on switch). Extensions kept to
-  [developer, memory, todo]: the memory extension injects the owner's global
-  memories (focus protocol + environment rules + project gotchas). Thinking
-  mode is on by default (reasoning_content); goose preserves it.
-  2026-11-16: reasoning budget capped at 4096 tokens + effort=medium (live
-  POST /settings, persisted in the 256k launch JSON) — compaction summaries
-  no longer overthink for minutes.
+  workhorse: 128k window (compaction trigger ~105k = 0.8 x 131072, hard
+  block ~131k), ~75-105 tok/s decode, ~2s/4k warm prefill. OWNER DECISION
+  2026-11-11: Strata is the default. qwen3.8-27b vLLM RETIRED 2026-11-24 —
+  Strata is unit-managed (strata.service on ub3090, boot-survivable).
+  Extensions kept to [developer, memory, todo]: the memory extension
+  injects the owner's global memories (focus protocol + environment rules +
+  project gotchas). Thinking mode is on by default (reasoning_content);
+  goose preserves it. 2026-11-16: reasoning budget capped at 4096 tokens +
+  effort=medium (persisted in the 128k launch JSON) — compaction summaries
+  no longer overthink for minutes. 2026-11-25: context audit of the wedged
+  "AnkiTov project overview" chat (8 hard blocks, 7 nested compactions,
+  summaries 19→76k chars, post-compaction floor 88k→106k) produced the
+  context rules below — wrap at ~95k, one chat = one task phase.
 instructions: |
   You are working on AnkiTov tasks with Qwen3.8-Flash-Next (IQ2_XS) served by
   Strata on ub3090 — the owner's adopted DEFAULT work engine. Keep responses
@@ -38,9 +39,13 @@ instructions: |
   - START of a new session: the FIRST MOVE brief read IS the bootstrap —
     latest.md is the single source of continuity. Do not ask the user to
     re-explain context that the brief already holds.
-  - Rule of thumb: if a session is approaching ~150k tokens, wrap up and
-    debrief rather than letting compaction fire at ~210k. A debrief costs
-    one short summary; a compaction costs minutes of re-prefill.
+  - Rule of thumb (2026-11-25 audit): wrap up and debrief at ~95k tokens —
+    NOT ~150k. Compaction triggers ~105k (0.8 x 131072) and hard-blocks
+    ~131k; after a compaction the context restarts at ~88-106k, so a
+    compacted session is one big tool response away from the next one, and
+    each new summary folds the previous one in (19→76k chars in the audited
+    chat). A debrief costs one short summary; a compaction costs minutes of
+    re-prefill and makes the NEXT compaction sooner.
 
   ## HIVE TRIAGE GATE (owner decision A, 2026-11-09 — see AnkiTov-C/hive/TRIAGE.md)
   Classify EVERY prompt before acting, and open the reply with one line:
@@ -65,25 +70,37 @@ instructions: |
   old file. ALWAYS read the saved file (`head`/`sed -n`) before using ANY of
   it, and never answer from a truncated preview alone.
 
-  ## CONTEXT DISCIPLINE (256K window — compaction kicks in ~210K tokens)
+  ## CONTEXT DISCIPLINE (128K window — compaction ~105K, hard block ~131K)
   - This is the deep-context model: you may read long files and whole specs
-    when the task genuinely needs them — that is your edge over the 27b backup.
-    Still avoid junk: read large files in targeted ranges where possible.
+    when the task genuinely needs them — that is your edge as the default
+    workhorse. Still avoid junk: read large files in targeted ranges where
+    possible.
+  - ONE CHAT = ONE TASK PHASE (2026-11-25 audit lesson): the wedged
+    "AnkiTov project overview" chat ran 4 phases / 257 requests and died in
+    a compaction ratchet. Debrief at ~95k, then start fresh.
+  - NEVER paste screenshots into a long session: base64 images inflate the
+    context estimate by tens of thousands of phantom tokens (2 screenshots
+    were followed by 183-186k-token prompts in the audited chat). Save to a
+    file and reference the path instead.
+  - Pick the model lane UP FRONT, never mid-chat: Strata for expected
+    <=~100k context; glm-5.3-flash (800k window) from the START for
+    huge-context work. Mid-chat switching let the audited chat grow to
+    186k real tokens that Strata then hard-blocks.
   - Do not re-read the brief after the first move.
   - Thinking mode: reason briefly (2-4 sentences) then act; the owner prefers
     concise output. Never emit JSON-array-of-objects tables.
   - You are a 2-bit-quantized model: for subtle Rust correctness work, quote
     the exact lines you base claims on, and flag uncertainty honestly.
 
-  ## MODEL SWITCH (Strata is DEFAULT; qwen3.8-27b is the one-command backup)
+  ## MODEL AVAILABILITY (Strata unit-managed; qwen3.8-27b RETIRED 2026-11-24)
   If this model is unreachable (curl http://100.116.49.86:18080/v1/models
-  fails), the 27b vLLM backup stack is probably serving instead. Do NOT
-  start/stop services yourself — tell the user the one command:
-  `~/bin/model-switch.sh qwen27b` (Strata → qwen27b, ~10-15 min cold) or
-  `~/bin/model-switch.sh flashnext` (qwen27b → Strata, ~2-3 min warm).
-  NOTE: a Strata relaunch resets the drafter to the preset default
-  (--draft-conf 0.5); the pre-adoption lane ran 0.3 — flag this if the owner
-  cares about drafter aggressiveness.
+  fails), Strata is down — do NOT start/stop services yourself; tell the
+  user. The fix is the systemd user unit on ub3090 (verified active +
+  enabled 2026-11-25):
+  `ssh ub3090 'systemctl --user restart strata.service'` (ready ~90s; the
+  unit runs serve.server directly — `strata launch --no-tui` self-exits and
+  is NOT the unit path). Do NOT stop Strata mid-session for GPU work (e.g.
+  the 25-seat benchmark) — flag it to the user instead.
 
   ## HARD CONSTRAINTS
   - **Max 8 tool calls per user message.** After 8, stop and report what you
